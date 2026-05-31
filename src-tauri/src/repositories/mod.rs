@@ -1,0 +1,222 @@
+use crate::errors::Result;
+use crate::models::{Book, QueryRecord, WordCache};
+use sqlx::SqlitePool;
+
+/// 图书仓储
+pub struct BookRepository {
+    pool: SqlitePool,
+}
+
+impl BookRepository {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn find_all(&self) -> Result<Vec<Book>> {
+        let books = sqlx::query_as::<_, Book>(
+            r#"
+            SELECT id, title, format, path, upload_time, author, file_size
+            FROM books
+            ORDER BY upload_time DESC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(books)
+    }
+
+    pub async fn find_by_id(&self, id: i64) -> Result<Option<Book>> {
+        let book = sqlx::query_as::<_, Book>(
+            r#"
+            SELECT id, title, format, path, upload_time, author, file_size
+            FROM books
+            WHERE id = ?
+            "#
+        )
+        .bind(id)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(book)
+    }
+
+    pub async fn create(&self, title: &str, format: &str, path: &str, author: Option<&str>, file_size: Option<i64>) -> Result<Book> {
+        let id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO books (title, format, path, author, file_size, upload_time)
+            VALUES (?, ?, ?, ?, ?, datetime('now'))
+            RETURNING id
+            "#
+        )
+        .bind(title)
+        .bind(format)
+        .bind(path)
+        .bind(author)
+        .bind(file_size)
+        .fetch_one(&self.pool)
+        .await?;
+
+        self.find_by_id(id).await?.ok_or_else(|| crate::errors::AppError::Unknown("Failed to create book".to_string()))
+    }
+
+    pub async fn delete(&self, id: i64) -> Result<()> {
+        sqlx::query("DELETE FROM books WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn search(&self, query: &str) -> Result<Vec<Book>> {
+        let pattern = format!("%{}%", query);
+        let books = sqlx::query_as::<_, Book>(
+            r#"
+            SELECT id, title, format, path, upload_time, author, file_size
+            FROM books
+            WHERE title LIKE ?
+            ORDER BY upload_time DESC
+            "#
+        )
+        .bind(pattern)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(books)
+    }
+}
+
+/// 查词记录仓储
+pub struct QueryRecordRepository {
+    pool: SqlitePool,
+}
+
+impl QueryRecordRepository {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn create(&self, original_text: &str, source_language: &str, target_language: &str, book_id: Option<i64>, context: Option<&str>, query_type: &str) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO query_records (original_text, source_language, target_language, book_id, context, query_type, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+            "#
+        )
+        .bind(original_text)
+        .bind(source_language)
+        .bind(target_language)
+        .bind(book_id)
+        .bind(context)
+        .bind(query_type)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn get_vocabulary_list(&self) -> Result<Vec<(String, i64, String)>> {
+        let rows: Vec<(String, i64, String)> = sqlx::query_as(
+            r#"
+            SELECT original_text as word, COUNT(*) as count, MAX(created_at) as last_time
+            FROM query_records
+            GROUP BY original_text
+            ORDER BY count DESC
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(rows)
+    }
+
+    pub async fn get_query_details(&self, word: &str) -> Result<Vec<QueryRecord>> {
+        let records = sqlx::query_as::<_, QueryRecord>(
+            r#"
+            SELECT id, original_text, source_language, target_language, book_id, context, query_type, created_at
+            FROM query_records
+            WHERE original_text = ?
+            ORDER BY created_at DESC
+            "#
+        )
+        .bind(word)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(records)
+    }
+
+    pub async fn get_summary(&self) -> Result<(i64, i64, Option<String>, f64)> {
+        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM query_records")
+            .fetch_one(&self.pool)
+            .await?;
+
+        let unique: i64 = sqlx::query_scalar("SELECT COUNT(DISTINCT original_text) FROM query_records")
+            .fetch_one(&self.pool)
+            .await?;
+
+        let most_looked_up: Option<String> = sqlx::query_scalar(
+            r#"
+            SELECT original_text
+            FROM query_records
+            GROUP BY original_text
+            ORDER BY COUNT(*) DESC
+            LIMIT 1
+            "#
+        )
+        .fetch_optional(&self.pool)
+        .await?;
+
+        let avg = if unique > 0 {
+            total as f64 / unique as f64
+        } else {
+            0.0
+        };
+
+        Ok((total, unique, most_looked_up, avg))
+    }
+}
+
+/// 翻译缓存仓储
+pub struct WordCacheRepository {
+    pool: SqlitePool,
+}
+
+impl WordCacheRepository {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn find_by_word(&self, word: &str, source_language: &str, target_language: &str) -> Result<Option<WordCache>> {
+        let cache = sqlx::query_as::<_, WordCache>(
+            r#"
+            SELECT id, word, source_language, target_language, translated, phonetic, explains
+            FROM word_cache
+            WHERE word = ? AND source_language = ? AND target_language = ?
+            "#
+        )
+        .bind(word)
+        .bind(source_language)
+        .bind(target_language)
+        .fetch_optional(&self.pool)
+        .await?;
+        Ok(cache)
+    }
+
+    pub async fn create(&self, word: &str, source_language: &str, target_language: &str, translated: &str, phonetic: Option<&str>, explains: Option<&str>) -> Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO word_cache (word, source_language, target_language, translated, phonetic, explains)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(word, source_language, target_language) DO UPDATE SET
+            translated = excluded.translated,
+            phonetic = excluded.phonetic,
+            explains = excluded.explains
+            "#
+        )
+        .bind(word)
+        .bind(source_language)
+        .bind(target_language)
+        .bind(translated)
+        .bind(phonetic)
+        .bind(explains)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+}
