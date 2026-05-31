@@ -6,6 +6,9 @@ pub mod repositories;
 pub mod services;
 pub mod utils;
 
+#[cfg(test)]
+mod tests;
+
 use commands::AppState;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::sync::Arc;
