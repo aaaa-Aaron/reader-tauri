@@ -12,6 +12,7 @@
   padding: 12px 24px;
   background: #fff;
   border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
 }
 
 .back {
@@ -47,18 +48,16 @@
 .main {
   flex: 1;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f5f5f5;
+  overflow: hidden;
 }
 
 .placeholder {
-  text-align: center;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f5f5f5;
   color: #999;
-}
-
-.placeholder p {
-  margin: 8px 0;
 }
 
 .loading,
@@ -76,4 +75,49 @@
 
 .error {
   color: #d32f2f;
+}
+
+/* Translation Panel */
+.translationPanel {
+  width: 300px;
+  background: #f5f5f5;
+  border-left: 1px solid #e0e0e0;
+  padding: 16px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.translationPanel h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.originalText {
+  background: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.translatedText {
+  background: #e3f2fd;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #1565c0;
+  border: 1px solid #bbdefb;
+}
+
+.translating {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #666;
+  text-align: center;
 }

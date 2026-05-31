@@ -2,9 +2,10 @@
  * 文件服务层 - 调用Tauri FS API
  */
 
-import { open, save } from '@tauri-apps/plugin-dialog';
-import { copyFile, readFile } from '@tauri-apps/plugin-fs';
+import { open } from '@tauri-apps/plugin-dialog';
+import { readFile, copyFile, mkdir } from '@tauri-apps/plugin-fs';
 import { appDataDir, join } from '@tauri-apps/api/path';
+import { invoke } from '@tauri-apps/api/core';
 
 export const fileService = {
   /**
@@ -28,6 +29,14 @@ export const fileService = {
   async copyToAppData(sourcePath: string, fileName: string): Promise<string> {
     const appData = await appDataDir();
     const booksDir = await join(appData, 'books');
+    
+    // Ensure books directory exists
+    try {
+      await mkdir(booksDir, { recursive: true });
+    } catch {
+      // Directory might already exist
+    }
+    
     const destPath = await join(booksDir, fileName);
     
     await copyFile(sourcePath, destPath);
@@ -35,9 +44,23 @@ export const fileService = {
   },
 
   /**
-   * 读取文件为ArrayBuffer
+   * 读取文件为Uint8Array
    */
-  async readFileAsArrayBuffer(path: string): Promise<Uint8Array> {
+  async readFileAsBytes(path: string): Promise<Uint8Array> {
     return await readFile(path);
+  },
+
+  /**
+   * 通过Tauri Command读取文件（备用）
+   */
+  async readFileBytesViaCommand(path: string): Promise<number[]> {
+    return await invoke<number[]>('read_file_bytes', { path });
+  },
+
+  /**
+   * 获取应用数据目录
+   */
+  async getAppDataDir(): Promise<string> {
+    return await invoke<string>('get_app_data_dir');
   }
 };

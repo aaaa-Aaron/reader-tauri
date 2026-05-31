@@ -5,6 +5,8 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 use tauri::State;
 
+pub mod file_commands;
+
 /// Application state
 pub struct AppState {
     pub db_pool: SqlitePool,
@@ -81,3 +83,6 @@ pub async fn get_statistics_summary(state: State<'_, Arc<AppState>>) -> Result<S
     let service = StatisticsService::new(state.db_pool.clone());
     service.get_statistics_summary().await.map_err(|e| e.to_string())
 }
+
+// Re-export file commands
+pub use file_commands::*;

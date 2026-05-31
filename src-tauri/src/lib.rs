@@ -116,6 +116,9 @@ pub fn run() {
             commands::get_vocabulary_list,
             commands::get_query_details,
             commands::get_statistics_summary,
+            commands::read_file_bytes,
+            commands::get_app_data_dir,
+            commands::ensure_dir,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

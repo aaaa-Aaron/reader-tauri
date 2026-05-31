@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { bookService } from '../../services/bookService';
+import { translationService } from '../../services/translationService';
 import type { Book } from '../../types/book';
+import type { TranslationRequest } from '../../types/translation';
+import EpubViewer from './components/EpubViewer';
 import styles from './Viewer.module.css';
 
 const Viewer: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedText, setSelectedText] = useState('');
+  const [translation, setTranslation] = useState<string | null>(null);
+  const [translating, setTranslating] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -27,6 +33,35 @@ const Viewer: React.FC = () => {
     }
   };
 
+  const handleTextSelect = useCallback(async (text: string, context: string) => {
+    setSelectedText(text);
+    setTranslating(true);
+    setTranslation(null);
+
+    try {
+      const request: TranslationRequest = {
+        text,
+        from: 'auto',
+        to: 'zh-CHS',
+        bookId: book?.id,
+        context
+      };
+
+      const result = await translationService.translate(request);
+      
+      if (result.success && result.api_result) {
+        setTranslation(result.api_result.translated);
+      } else {
+        setTranslation('Translation failed');
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      setTranslation('Translation error');
+    } finally {
+      setTranslating(false);
+    }
+  }, [book?.id]);
+
   if (loading) {
     return <div className={styles.loading}>Loading book...</div>;
   }
@@ -34,6 +69,9 @@ const Viewer: React.FC = () => {
   if (!book) {
     return <div className={styles.error}>Book not found</div>;
   }
+
+  // Convert file path to URL for EPUB.js
+  const bookUrl = `file://${book.path}`;
 
   return (
     <div className={styles.container}>
@@ -44,11 +82,29 @@ const Viewer: React.FC = () => {
       </header>
 
       <main className={styles.main}>
-        <div className={styles.placeholder}>
-          <p>Viewer for {book.format.toUpperCase()} files</p>
-          <p>Path: {book.path}</p>
-          <p>Coming soon...</p>
-        </div>
+        {book.format === 'epub' ? (
+          <EpubViewer 
+            bookPath={bookUrl} 
+            onTextSelect={handleTextSelect}
+          />
+        ) : (
+          <div className={styles.placeholder}>
+            <p>PDF viewer coming soon...</p>
+          </div>
+        )}
+
+        {/* Translation Panel */}
+        {(selectedText || translating) && (
+          <aside className={styles.translationPanel}>
+            <h3>Translation</h3>
+            <div className={styles.originalText}>{selectedText}</div>
+            {translating ? (
+              <div className={styles.translating}>Translating...</div>
+            ) : (
+              <div className={styles.translatedText}>{translation}</div>
+            )}
+          </aside>
+        )}
       </main>
     </div>
   );
