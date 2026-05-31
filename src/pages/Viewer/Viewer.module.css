@@ -85,6 +85,7 @@
   padding: 16px;
   overflow-y: auto;
   flex-shrink: 0;
+  position: relative;
 }
 
 .translationPanel h3 {
@@ -92,6 +93,25 @@
   font-weight: 600;
   margin-bottom: 12px;
   color: #333;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  color: #999;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: #e0e0e0;
 }
 
 .originalText {

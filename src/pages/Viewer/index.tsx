@@ -5,6 +5,7 @@ import { translationService } from '../../services/translationService';
 import type { Book } from '../../types/book';
 import type { TranslationRequest } from '../../types/translation';
 import EpubViewer from './components/EpubViewer';
+import PdfViewer from './components/PdfViewer';
 import styles from './Viewer.module.css';
 
 const Viewer: React.FC = () => {
@@ -49,8 +50,8 @@ const Viewer: React.FC = () => {
 
       const result = await translationService.translate(request);
       
-      if (result.success && result.api_result) {
-        setTranslation(result.api_result.translated);
+      if (result.success && result.apiResult) {
+        setTranslation(result.apiResult.translated);
       } else {
         setTranslation('Translation failed');
       }
@@ -62,6 +63,12 @@ const Viewer: React.FC = () => {
     }
   }, [book?.id]);
 
+  // Close translation panel
+  const closeTranslationPanel = useCallback(() => {
+    setSelectedText('');
+    setTranslation(null);
+  }, []);
+
   if (loading) {
     return <div className={styles.loading}>Loading book...</div>;
   }
@@ -70,8 +77,8 @@ const Viewer: React.FC = () => {
     return <div className={styles.error}>Book not found</div>;
   }
 
-  // Convert file path to URL for EPUB.js
-  const bookUrl = `file://${book.path}`;
+  // Convert file path to URL
+  const bookUrl = book.path;
 
   return (
     <div className={styles.container}>
@@ -87,15 +94,26 @@ const Viewer: React.FC = () => {
             bookPath={bookUrl} 
             onTextSelect={handleTextSelect}
           />
+        ) : book.format === 'pdf' ? (
+          <PdfViewer 
+            bookPath={bookUrl}
+            onTextSelect={handleTextSelect}
+          />
         ) : (
           <div className={styles.placeholder}>
-            <p>PDF viewer coming soon...</p>
+            <p>Unsupported format: {book.format}</p>
           </div>
         )}
 
         {/* Translation Panel */}
         {(selectedText || translating) && (
           <aside className={styles.translationPanel}>
+            <button 
+              className={styles.closeBtn}
+              onClick={closeTranslationPanel}
+            >
+              ×
+            </button>
             <h3>Translation</h3>
             <div className={styles.originalText}>{selectedText}</div>
             {translating ? (

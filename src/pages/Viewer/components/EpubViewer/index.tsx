@@ -14,7 +14,6 @@ const EpubViewer: React.FC<EpubViewerProps> = ({ bookPath, onTextSelect }) => {
   const renditionRef = useRef<Rendition | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentLocation, setCurrentLocation] = useState<string>('');
   const [toc, setToc] = useState<Array<{ label: string; href: string }>>([]);
   const [totalPages, setTotalPages] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -26,7 +25,7 @@ const EpubViewer: React.FC<EpubViewerProps> = ({ bookPath, onTextSelect }) => {
         setIsLoading(true);
         setError(null);
 
-        // Fetch file as ArrayBuffer using XHR (to avoid CORS issues in Tauri)
+        // Fetch file as ArrayBuffer
         const response = await fetch(bookPath);
         const arrayBuffer = await response.arrayBuffer();
 
@@ -54,20 +53,20 @@ const EpubViewer: React.FC<EpubViewerProps> = ({ bookPath, onTextSelect }) => {
           // Generate locations for pagination
           await book.ready;
           await book.locations.generate(1600);
-          setTotalPages(book.locations.total);
+          const locationsLength = book.locations.length();
+          setTotalPages(locationsLength);
 
           // Display first page
           await rendition.display();
 
           // Listen for location changes
           rendition.on('relocated', (location: any) => {
-            setCurrentLocation(location.start.cfi);
-            const page = book.locations.percentageFromCfi(location.start.cfi);
-            setCurrentPage(Math.floor(page * book.locations.total) + 1);
+            const percentage = book.locations.percentageFromCfi(location.start.cfi);
+            setCurrentPage(Math.floor(percentage * locationsLength) + 1);
           });
 
           // Listen for text selection
-          rendition.on('selected', (cfiRange: string, contents: any) => {
+          rendition.on('selected', (_cfiRange: string, contents: any) => {
             const selectedText = contents.window.getSelection().toString().trim();
             if (selectedText && onTextSelect) {
               // Get context - the paragraph containing the selection
