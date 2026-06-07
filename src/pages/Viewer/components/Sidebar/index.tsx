@@ -1,6 +1,6 @@
 import React from 'react';
 import TableOfContents from '../TableOfContents';
-import styles from '../../Viewer.module.css';
+import styles from './Sidebar.module.css';
 
 interface SidebarProps {
   outline: any[];
@@ -14,7 +14,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onPageClick
 }) => {
   return (
-    <aside className={`${styles.leftSidebar} ${!showSidebarLeft ? styles.hidden : ''}`}>
+    <aside className={`${styles.sidebar} ${!showSidebarLeft ? styles.hidden : ''}`}>
       <nav className={styles.tocNav}>
         <ul className={styles.tocList}>
           <TableOfContents

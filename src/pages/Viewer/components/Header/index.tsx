@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import type { Book } from '../../../../types/book';
-import styles from '../../Viewer.module.css';
+import styles from './Header.module.css';
 
 interface HeaderProps {
   showSidebarLeft: boolean;

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DataSourceType } from '../../../../types/translation';
 import type { TranslationResult, TranslationRequest } from '../../../../types/translation';
 import { translationService } from '../../../../services/translationService';
-import styles from '../../Viewer.module.css';
+import styles from './TranslationPopup.module.css';
 
 interface TranslationPopupProps {
   selectedWord: string;
@@ -62,14 +62,14 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
   }, [selectedWord, bookId, onTranslatingChange]);
 
   return (
-    <div className={styles.translatePopup} id="translate-popup" style={{ display: selectedWord ? 'block' : 'none' }}>
-      <div className={styles.translateHeader}>
+    <div className={`${styles.popup} ${selectedWord ? styles.visible : ''}`} id="translate-popup">
+      <div className={styles.header}>
         <span>翻译结果</span>
-        <button className={styles.closeTranslate} onClick={onClose}>
+        <button className={styles.closeBtn} onClick={onClose}>
           ×
         </button>
       </div>
-      <div className={styles.translateContent} id="translate-content">
+      <div className={styles.content} id="translate-content">
         {selectedWord && (
           <div><strong>原文：</strong>{selectedWord}</div>
         )}

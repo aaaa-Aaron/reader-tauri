@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from '../../Viewer.module.css';
+import styles from '../Sidebar/Sidebar.module.css';
 
 interface TableOfContentsProps {
   outline: any[];

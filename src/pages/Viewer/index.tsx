@@ -4,7 +4,7 @@ import { bookService } from '../../services/bookService';
 import type { Book } from '../../types/book';
 import styles from './Viewer.module.css';
 import './LongmanDictionaryOfContemporaryEnglish6thEnEn.css';
-import EpubViewer from './components/EpubViewer';
+import EpubContent from './components/EpubContent';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TranslationPopup from './components/TranslationPopup';
@@ -170,7 +170,7 @@ const Viewer: React.FC = () => {
         />
 
         <main className={styles.epubMain} id="epub-viewer">
-          <EpubViewer
+          <EpubContent
             ref={epubViewerRef}
             file={epubUrl}
             onSelectedText={handleEpubSelectedText}
