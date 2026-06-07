@@ -145,7 +145,6 @@ const Viewer: React.FC = () => {
     );
   }
 
-  // Convert file path to URL for PDF
   const epubUrl = book.path;
 
   return (
@@ -174,7 +173,7 @@ const Viewer: React.FC = () => {
           }}
         />
 
-        <main className={styles.pdfMain} id="epub-viewer">
+        <main className={styles.epubMain} id="epub-viewer">
           <EpubViewer
             ref={epubViewerRef}
             file={epubUrl}
