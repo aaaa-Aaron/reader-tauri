@@ -31,9 +31,9 @@ export enum DataSourceType {
 }
 
 export interface TranslationResult {
-  originalText: string;
-  dataSource: DataSourceType;
-  dictionaryResult?: DictionaryEntry;
-  apiResult?: ApiTranslationResponse;
+  original_text: string;
+  data_source: DataSourceType;
+  dictionary_result?: DictionaryEntry;
+  api_result?: ApiTranslationResponse;
   success: boolean;
 }

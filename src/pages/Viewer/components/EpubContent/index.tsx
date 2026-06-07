@@ -17,10 +17,10 @@ interface EpubContentProps {
     onPrevPage: () => void;
     onNextPage: () => void;
     onLoadSuccess?: (book: Book) => void;
-    onPageChange?: (currentPage: number, totalPages: number) => void;
-    onPrev?: () => void;
-    onNext?: () => void;
-    onGoTo?: (href: string) => void;
+    // onPageChange?: (currentPage: number, totalPages: number) => void;
+    // onPrev?: () => void;
+    // onNext?: () => void;
+    // onGoTo?: (href: string) => void;
 }
 
 const EpubContent: React.FC<EpubContentProps> = ({
@@ -30,10 +30,10 @@ const EpubContent: React.FC<EpubContentProps> = ({
     onPrevPage,
     onNextPage,
     onLoadSuccess,
-    onPageChange,
-    onPrev,
-    onNext,
-    onGoTo
+    // onPageChange,
+    // onPrev,
+    // onNext,
+    // onGoTo
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const renditionRef = useRef<Rendition | null>(null);
@@ -41,20 +41,20 @@ const EpubContent: React.FC<EpubContentProps> = ({
     const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const isInitializingRef = useRef(false);
 
-    const onPageChangeRef = useRef(onPageChange);
+    // const onPageChangeRef = useRef(onPageChange);
     const onLoadSuccessRef = useRef(onLoadSuccess);
     const onSelectedTextRef = useRef(onSelectedText);
-    const onPrevRef = useRef(onPrev);
-    const onNextRef = useRef(onNext);
-    const onGoToRef = useRef(onGoTo);
+    // const onPrevRef = useRef(onPrev);
+    // const onNextRef = useRef(onNext);
+    // const onGoToRef = useRef(onGoTo);
 
     useEffect(() => {
-        onPageChangeRef.current = onPageChange;
+        // onPageChangeRef.current = onPageChange;
         onLoadSuccessRef.current = onLoadSuccess;
         onSelectedTextRef.current = onSelectedText;
-        onPrevRef.current = onPrev;
-        onNextRef.current = onNext;
-        onGoToRef.current = onGoTo;
+        // onPrevRef.current = onPrev;
+        // onNextRef.current = onNext;
+        // onGoToRef.current = onGoTo;
     });
 
     useImperativeHandle(ref, () => ({
@@ -162,28 +162,28 @@ const EpubContent: React.FC<EpubContentProps> = ({
                     console.warn('Display error:', err);
                 }
 
-                try {
-                    // 生成虚拟页码
-                    await book.locations.generate(1024);
-                } catch (err) {
-                    console.warn('Failed to generate locations:', err);
-                }
+                // try {
+                //     // 生成虚拟页码
+                //     await book.locations.generate(1024);
+                // } catch (err) {
+                //     console.warn('Failed to generate locations:', err);
+                // }
 
-                const total = book.locations.length();
+                // const total = book.locations.length();
 
-                rendition.on('relocated', (_location: any) => {
-                    if (!renditionRef.current) return;
+                // rendition.on('relocated', (_location: any) => {
+                //     if (!renditionRef.current) return;
 
-                    try {
-                        const currentLoc = renditionRef.current.currentLocation();
-                        if (currentLoc && typeof currentLoc.index === 'number') {
-                            const pageNum = currentLoc.index + 1;
-                            onPageChangeRef.current?.(pageNum, total);
-                        }
-                    } catch (err) {
-                        console.warn('Failed to get current location:', err);
-                    }
-                });
+                //     try {
+                //         const currentLoc = renditionRef.current.currentLocation();
+                //         if (currentLoc && typeof currentLoc.index === 'number') {
+                //             const pageNum = currentLoc.index + 1;
+                //             // onPageChangeRef.current?.(pageNum, total);
+                //         }
+                //     } catch (err) {
+                //         console.warn('Failed to get current location:', err);
+                //     }
+                // });
 
                 rendition.on('selected', async (cfiRange: string, _contents: any) => {
                     try {
@@ -274,9 +274,9 @@ const EpubContent: React.FC<EpubContentProps> = ({
                 });
 
                 try {
-                    const initialLoc = rendition.currentLocation();
-                    const initialPage = initialLoc && typeof initialLoc.index === 'number' ? initialLoc.index + 1 : 1;
-                    onPageChangeRef.current?.(initialPage, total);
+                    // const initialLoc = rendition.currentLocation();
+                    // const initialPage = initialLoc && typeof initialLoc.index === 'number' ? initialLoc.index + 1 : 1;
+                    // onPageChangeRef.current?.(initialPage, total);
                     onLoadSuccessRef.current?.(book);
                 } catch (err) {
                     console.warn('Failed to get initial location:', err);

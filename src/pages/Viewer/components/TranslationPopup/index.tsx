@@ -48,8 +48,8 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
       } catch (error) {
         console.error('翻译失败:', error);
         setTranslationResult({
-          originalText: selectedWord,
-          dataSource: DataSourceType.API,
+          original_text: selectedWord,
+          data_source: DataSourceType.API,
           success: false,
         });
       } finally {
@@ -79,30 +79,30 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
           <>
             {translationResult.success ? (
               <>
-                {translationResult.dataSource === DataSourceType.DICTIONARY ? (
-                  translationResult.dictionaryResult && translationResult.dictionaryResult.definition ? (
-                    <div className="entry" dangerouslySetInnerHTML={{ __html: translationResult.dictionaryResult.definition }} />
+                {translationResult.data_source === DataSourceType.DICTIONARY ? (
+                  translationResult.dictionary_result && translationResult.dictionary_result.definition ? (
+                    <div className="entry" dangerouslySetInnerHTML={{ __html: translationResult.dictionary_result.definition }} />
                   ) : (
                     <div><strong>翻译：</strong>词典查询失败</div>
                   )
-                ) : translationResult.dataSource === DataSourceType.API && translationResult.apiResult ? (
+                ) : translationResult.data_source === DataSourceType.API && translationResult.api_result ? (
                   <>
-                    <div><strong>翻译：</strong>{translationResult.apiResult.translated}</div>
-                    {translationResult.apiResult.phonetic && (
-                      <div><strong>音标：</strong>{translationResult.apiResult.phonetic}</div>
+                    <div><strong>翻译：</strong>{translationResult.api_result.translated}</div>
+                    {translationResult.api_result.phonetic && (
+                      <div><strong>音标：</strong>{translationResult.api_result.phonetic}</div>
                     )}
-                    {translationResult.apiResult.explains && translationResult.apiResult.explains.length > 0 && (
+                    {translationResult.api_result.explains && translationResult.api_result.explains.length > 0 && (
                       <div>
                         <strong>解释：</strong>
                         <ul>
-                          {translationResult.apiResult.explains.map((explain, index) => (
+                          {translationResult.api_result.explains.map((explain, index) => (
                             <li key={index}>{explain}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    <div><strong>源语言：</strong>{translationResult.apiResult.source}</div>
-                    <div><strong>目标语言：</strong>{translationResult.apiResult.target}</div>
+                    <div><strong>源语言：</strong>{translationResult.api_result.source}</div>
+                    <div><strong>目标语言：</strong>{translationResult.api_result.target}</div>
                   </>
                 ) : (
                   <div><strong>翻译：</strong>翻译失败</div>

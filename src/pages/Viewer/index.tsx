@@ -12,13 +12,11 @@ import TranslationPopup from './components/TranslationPopup';
 const Viewer: React.FC = () => {
   const { id } = useParams();
   const epubViewerRef = useRef<any>(null);
-  const [numPages, setNumPages] = useState<number>(0);
   const [book, setBook] = useState<Book | undefined>(undefined);
   const [isBookLoading, setIsBookLoading] = useState<boolean>(true);
   const [outline, setOutline] = useState<any[]>([]);
   const [selectedWord, setSelectedWord] = useState<string>('');
   const [selectedContext, setSelectedContext] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [showSidebarLeft, setShowSidebarLeft] = useState<boolean>(true);
   const isTranslatingRef = useRef<boolean>(false);
 
@@ -86,17 +84,14 @@ const Viewer: React.FC = () => {
   const handlePrevPage = useCallback(() => {
     if (epubViewerRef.current) {
       epubViewerRef.current.prev();
-      setCurrentPage(prev => Math.max(1, prev - 1));
     }
   }, []);
 
   const handleNextPage = useCallback(() => {
     if (epubViewerRef.current) {
       epubViewerRef.current.next();
-    } else {
-      setCurrentPage(prev => Math.min(numPages, prev + 1));
     }
-  }, [numPages]);
+  }, []);
 
   // EPUB load success
   const onEpubLoadSuccess = useCallback(async (_book: any) => {
@@ -177,10 +172,6 @@ const Viewer: React.FC = () => {
             onPrevPage={handlePrevPage}
             onNextPage={handleNextPage}
             onLoadSuccess={onEpubLoadSuccess}
-            onPageChange={(page, total) => {
-              setCurrentPage(page);
-              setNumPages(total);
-            }}
           />
         </main>
       </div>
