@@ -19,3 +19,10 @@ export interface CreateBookRequest {
   author?: string;
   fileSize?: number;
 }
+
+export interface UpdateBookRequest {
+  id: number;
+  title?: string;
+  author?: string;
+  fileSize?: number;
+}

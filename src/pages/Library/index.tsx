@@ -42,6 +42,9 @@ const Library: React.FC = () => {
         return;
       }
 
+      // Get file size
+      const fileSize = await fileService.getFileSize(filePath);
+
       // Copy file to app data
       const destPath = await fileService.copyToAppData(filePath, fileName);
       
@@ -50,7 +53,7 @@ const Library: React.FC = () => {
         title: fileName.replace(/\.[^/.]+$/, ''),
         format: ext as 'pdf' | 'epub',
         filePath: destPath,
-        fileSize: 0
+        fileSize: fileSize
       });
 
       setBooks(prev => [...prev, newBook]);

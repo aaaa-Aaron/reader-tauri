@@ -309,7 +309,8 @@ mod tests {
     #[tokio::test]
     async fn test_translation_service_translate() {
         let pool = create_test_db().await;
-        let service = TranslationService::new(pool);
+        let dict_pool = create_test_db().await;
+        let service = TranslationService::new(pool, dict_pool);
 
         let request = TranslationRequest {
             text: "hello".to_string(),

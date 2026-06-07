@@ -40,7 +40,7 @@ pub struct WordCache {
 }
 
 /// 词典条目实体
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct DictionaryEntry {
     pub word: String,
     pub definition: String,

@@ -2,10 +2,21 @@ use serde::{Deserialize, Serialize};
 
 /// 创建图书请求
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateBookRequest {
     pub title: String,
     pub format: String,
     pub file_path: String,
+    pub author: Option<String>,
+    pub file_size: Option<i64>,
+}
+
+/// 更新图书请求
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateBookRequest {
+    pub id: i64,
+    pub title: Option<String>,
     pub author: Option<String>,
     pub file_size: Option<i64>,
 }

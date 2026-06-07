@@ -1,156 +1,380 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import ePub from 'epubjs';
-import type { Book as EpubBook, Rendition } from 'epubjs';
-import styles from './EpubViewer.module.css';
+import { useState, useEffect, useRef, useImperativeHandle, Ref } from 'react';
+import ePub, { Book, Rendition } from 'epubjs';
+import { readFile } from '@tauri-apps/plugin-fs';
+import styles from '../../Viewer.module.css';
 
-interface EpubViewerProps {
-  bookPath: string;
-  onTextSelect?: (text: string, context: string) => void;
+export interface EpubViewerRef {
+  prev: () => void;
+  next: () => void;
+  getOutline: () => Promise<any[]>;
+  goTo: (href: string) => void;
 }
 
-const EpubViewer: React.FC<EpubViewerProps> = ({ bookPath, onTextSelect }) => {
-  const viewerRef = useRef<HTMLDivElement>(null);
-  const bookRef = useRef<EpubBook | null>(null);
+interface EpubViewerProps {
+  ref: Ref<EpubViewerRef | null>;
+  file: string;
+  onSelectedText: (text: string, context?: string) => void;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  onLoadSuccess?: (book: Book) => void;
+  onPageChange?: (currentPage: number, totalPages: number) => void;
+  onPrev?: () => void;
+  onNext?: () => void;
+  onGoTo?: (href: string) => void;
+}
+
+const EpubViewer: React.FC<EpubViewerProps> = ({
+  ref,
+  file,
+  onSelectedText,
+  onPrevPage,
+  onNextPage,
+  onLoadSuccess,
+  onPageChange,
+  onPrev,
+  onNext,
+  onGoTo
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const renditionRef = useRef<Rendition | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [toc, setToc] = useState<Array<{ label: string; href: string }>>([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const bookRef = useRef<Book | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const isInitializingRef = useRef(false);
+
+  const onPageChangeRef = useRef(onPageChange);
+  const onLoadSuccessRef = useRef(onLoadSuccess);
+  const onSelectedTextRef = useRef(onSelectedText);
+  const onPrevRef = useRef(onPrev);
+  const onNextRef = useRef(onNext);
+  const onGoToRef = useRef(onGoTo);
+
+  useEffect(() => {
+    onPageChangeRef.current = onPageChange;
+    onLoadSuccessRef.current = onLoadSuccess;
+    onSelectedTextRef.current = onSelectedText;
+    onPrevRef.current = onPrev;
+    onNextRef.current = onNext;
+    onGoToRef.current = onGoTo;
+  });
+
+  useImperativeHandle(ref, () => ({
+    prev: async () => {
+      if (renditionRef.current) {
+        try {
+          const currentLoc = renditionRef.current.currentLocation();
+          console.log('Current location before prev:', currentLoc);
+          const result = renditionRef.current.prev();
+          console.log('prev() returned:', result);
+          if (result instanceof Promise) {
+            await result.then(() => {
+              console.log('prev() resolved');
+              const newLoc = renditionRef.current?.currentLocation();
+              console.log('Current location after prev:', newLoc);
+            }).catch(err => console.error('prev() promise rejected:', err));
+          }
+        } catch (err) {
+          console.warn('Failed to navigate prev:', err);
+        }
+      }
+    },
+    next: async () => {
+      console.log('useImperativeHandle next called, renditionRef.current:', renditionRef.current);
+      if (renditionRef.current) {
+        try {
+          const currentLoc = renditionRef.current.currentLocation();
+          console.log('Current location before next:', currentLoc);
+          const result = renditionRef.current.next();
+          console.log('next() returned:', result);
+          if (result instanceof Promise) {
+            await result.then(() => {
+              console.log('next() resolved');
+              const newLoc = renditionRef.current?.currentLocation();
+              console.log('Current location after next:', newLoc);
+            }).catch(err => console.error('next() promise rejected:', err));
+          }
+        } catch (err) {
+          console.warn('Failed to navigate next:', err);
+        }
+      }
+    },
+
+    getOutline: async () => {
+      if (!bookRef.current) return [];
+      try {
+        await bookRef.current.ready;
+        const nav = bookRef.current.navigation;
+        if (nav && nav.toc) {
+          return nav.toc;
+        }
+        return [];
+      } catch (err) {
+        console.warn('Failed to get outline:', err);
+        return [];
+      }
+    },
+
+    goTo: async (href: string) => {
+      if (renditionRef.current) {
+        try {
+          renditionRef.current.display(href);
+        } catch (err) {
+          console.warn('Failed to navigate to:', href, err);
+        }
+      }
+    }
+  }))
+
+
+  // ResizeObserver for dimension changes
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({ width, height });
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Load EPUB book
   useEffect(() => {
+    if (!file || !containerRef.current || isInitializingRef.current || renditionRef.current) return;
+
+    isInitializingRef.current = true;
+
     const loadBook = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
+        // Read file using Tauri FS API
+        const uint8Array = await readFile(file);
+        const arrayBuffer = uint8Array.buffer.slice(
+          uint8Array.byteOffset,
+          uint8Array.byteOffset + uint8Array.byteLength
+        );
 
-        // Fetch file as ArrayBuffer
-        const response = await fetch(bookPath);
-        const arrayBuffer = await response.arrayBuffer();
-
-        // Create book
         const book = ePub(arrayBuffer);
         bookRef.current = book;
 
-        // Get table of contents
-        const navigation = await book.loaded.navigation;
-        const tocItems = navigation.toc.map(item => ({
-          label: item.label,
-          href: item.href
-        }));
-        setToc(tocItems);
+        await book.ready;
 
-        // Render book
-        if (viewerRef.current) {
-          const rendition = book.renderTo(viewerRef.current, {
-            width: '100%',
-            height: '100%',
-            spread: 'none'
-          });
-          renditionRef.current = rendition;
-
-          // Generate locations for pagination
-          await book.ready;
-          await book.locations.generate(1600);
-          const locationsLength = book.locations.length();
-          setTotalPages(locationsLength);
-
-          // Display first page
-          await rendition.display();
-
-          // Listen for location changes
-          rendition.on('relocated', (location: any) => {
-            const percentage = book.locations.percentageFromCfi(location.start.cfi);
-            setCurrentPage(Math.floor(percentage * locationsLength) + 1);
-          });
-
-          // Listen for text selection
-          rendition.on('selected', (_cfiRange: string, contents: any) => {
-            const selectedText = contents.window.getSelection().toString().trim();
-            if (selectedText && onTextSelect) {
-              // Get context - the paragraph containing the selection
-              const range = contents.window.getSelection().getRangeAt(0);
-              const paragraph = range.commonAncestorContainer.parentElement;
-              const context = paragraph?.textContent || selectedText;
-              onTextSelect(selectedText, context);
-            }
-          });
+        if (!containerRef.current) {
+          return;
         }
 
-        setIsLoading(false);
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
+
+        const rendition = book.renderTo(containerRef.current, {
+          width: containerWidth,
+          height: containerHeight,
+          spread: 'none' as const,
+          flow: 'paginated' as const,
+          allowScriptedContent: true
+        });
+
+        renditionRef.current = rendition;
+        console.log('Rendition created and set:', rendition);
+
+        try {
+          await rendition.display();
+        } catch (err) {
+          console.warn('Display error:', err);
+        }
+
+        try {
+          // 生成虚拟页码
+          await book.locations.generate(1024);
+        } catch (err) {
+          console.warn('Failed to generate locations:', err);
+        }
+
+        const total = book.locations.length();
+
+        rendition.on('relocated', (_location: any) => {
+          if (!renditionRef.current) return;
+
+          try {
+            const currentLoc = renditionRef.current.currentLocation();
+            if (currentLoc && typeof currentLoc.index === 'number') {
+              const pageNum = currentLoc.index + 1;
+              onPageChangeRef.current?.(pageNum, total);
+            }
+          } catch (err) {
+            console.warn('Failed to get current location:', err);
+          }
+        });
+
+        rendition.on('selected', async (cfiRange: string, _contents: any) => {
+          try {
+            const range = await book.getRange(cfiRange);
+            const text = range.toString().trim();
+            if (!text) return;
+
+            let context = '';
+
+            if (range && range.commonAncestorContainer) {
+              const container = range.commonAncestorContainer;
+              let paragraphText = '';
+              if (container.nodeType === Node.TEXT_NODE && container.textContent) {
+                paragraphText = container.textContent;
+              } else if ('textContent' in container) {
+                paragraphText = (container as Text).textContent || '';
+              }
+
+              if (paragraphText) {
+                const startOffset = range.startOffset;
+                const sentencePattern = /[^.!?。！？\n]+[.!?。！？]+/g;
+                const sentences = paragraphText.match(sentencePattern) || [paragraphText];
+
+                let containingSentence = '';
+                let accumulatedLength = 0;
+
+                for (const sentence of sentences) {
+                  const sentenceStart = accumulatedLength;
+                  const sentenceEnd = accumulatedLength + sentence.length;
+
+                  if (startOffset >= sentenceStart && startOffset < sentenceEnd) {
+                    containingSentence = sentence.trim();
+                    break;
+                  }
+                  accumulatedLength += sentence.length;
+                }
+
+                if (!containingSentence && sentences.length === 1) {
+                  containingSentence = sentences[0].trim();
+                }
+
+                if (containingSentence) {
+                  context = containingSentence;
+                } else {
+                  const selectedLower = text.toLowerCase();
+                  const paragraphLower = paragraphText.toLowerCase();
+                  const matchIndex = paragraphLower.indexOf(selectedLower);
+
+                  if (matchIndex >= 0) {
+                    accumulatedLength = 0;
+                    for (const sentence of sentences) {
+                      const sentenceStart = accumulatedLength;
+                      const sentenceEnd = accumulatedLength + sentence.length;
+
+                      if (matchIndex >= sentenceStart && matchIndex < sentenceEnd) {
+                        containingSentence = sentence.trim();
+                        break;
+                      }
+                      accumulatedLength += sentence.length;
+                    }
+                    if (containingSentence) {
+                      context = containingSentence;
+                    }
+                  }
+                }
+              }
+
+              if (!context || context.length < text.length) {
+                context = text;
+              }
+
+              if (context.length > 300) {
+                const textIndex = context.toLowerCase().indexOf(text.toLowerCase());
+                if (textIndex >= 0) {
+                  const contextStart = Math.max(0, textIndex - 100);
+                  const contextEnd = Math.min(context.length, textIndex + text.length + 100);
+                  context = (contextStart > 0 ? '...' : '') +
+                    context.substring(contextStart, contextEnd).trim() +
+                    (contextEnd < context.length ? '...' : '');
+                }
+              }
+
+              onSelectedTextRef.current?.(text, context);
+            }
+          } catch (err) {
+            console.warn('Failed to get selected text:', err);
+          }
+        });
+
+        try {
+          const initialLoc = rendition.currentLocation();
+          const initialPage = initialLoc && typeof initialLoc.index === 'number' ? initialLoc.index + 1 : 1;
+          onPageChangeRef.current?.(initialPage, total);
+          onLoadSuccessRef.current?.(book);
+        } catch (err) {
+          console.warn('Failed to get initial location:', err);
+          onLoadSuccessRef.current?.(book);
+        }
+
       } catch (err) {
-        console.error('Failed to load EPUB:', err);
-        setError('Failed to load EPUB file');
-        setIsLoading(false);
+        console.error('EPUB loading error:', err);
       }
     };
 
-    loadBook();
+    if (!renditionRef.current) {
+      loadBook();
+    }
 
-    // Cleanup
     return () => {
       if (renditionRef.current) {
-        renditionRef.current.destroy();
+        try {
+          renditionRef.current.destroy();
+        } catch (err) {
+          console.warn('Failed to destroy rendition:', err);
+        }
+        renditionRef.current = null;
+        isInitializingRef.current = false;
       }
       if (bookRef.current) {
-        bookRef.current.destroy();
+        try {
+          bookRef.current.destroy();
+        } catch (err) {
+          console.warn('Failed to destroy book:', err);
+        }
+        bookRef.current = null;
       }
     };
-  }, [bookPath, onTextSelect]);
+  }, [file]);
 
-  // Navigation functions
-  const goPrev = useCallback(() => {
-    renditionRef.current?.prev();
-  }, []);
+  // Handle dimension changes - resize rendition
+  useEffect(() => {
+    if (renditionRef.current && dimensions.width > 0 && dimensions.height > 0) {
+      try {
+        renditionRef.current.resize(dimensions.width, dimensions.height);
+      } catch (err) {
+        console.warn('Failed to resize:', err);
+      }
+    }
+  }, [dimensions]);
 
-  const goNext = useCallback(() => {
-    renditionRef.current?.next();
-  }, []);
+  const handlePrevClick = () => {
+    console.log('handlePrevClick called, renditionRef.current:', renditionRef.current);
+    onPrevPage();
+  };
 
-  const goToTocItem = useCallback((href: string) => {
-    renditionRef.current?.display(href);
-  }, []);
-
-  if (isLoading) {
-    return <div className={styles.loading}>Loading EPUB...</div>;
-  }
-
-  if (error) {
-    return <div className={styles.error}>{error}</div>;
-  }
+  const handleNextClick = () => {
+    console.log('handleNextClick called, renditionRef.current:', renditionRef.current);
+    onNextPage();
+  };
 
   return (
-    <div className={styles.container}>
-      {/* Sidebar with TOC */}
-      <aside className={styles.sidebar}>
-        <h3>Contents</h3>
-        <nav className={styles.toc}>
-          {toc.map((item, index) => (
-            <button
-              key={index}
-              className={styles.tocItem}
-              onClick={() => goToTocItem(item.href)}
-            >
-              {item.label}
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Main viewer */}
-      <main className={styles.main}>
-        <div ref={viewerRef} className={styles.viewer} />
-        
-        {/* Navigation controls */}
-        <div className={styles.controls}>
-          <button onClick={goPrev} className={styles.navBtn}>← Previous</button>
-          <span className={styles.pageInfo}>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button onClick={goNext} className={styles.navBtn}>Next →</button>
-        </div>
-      </main>
+    <div
+      ref={containerRef}
+      className={styles.epubContainer}
+    >
+      <div className={styles.pageNavigation}>
+        <button
+          className={styles.navBtn}
+          onClick={handlePrevClick}
+        >
+          ‹
+        </button>
+        <button
+          className={styles.navBtn}
+          onClick={handleNextClick}
+        >
+          ›
+        </button>
+      </div>
     </div>
   );
 };

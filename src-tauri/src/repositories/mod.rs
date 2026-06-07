@@ -1,5 +1,5 @@
 use crate::errors::Result;
-use crate::models::{Book, QueryRecord, WordCache};
+use crate::models::{Book, DictionaryEntry, QueryRecord, WordCache};
 use sqlx::SqlitePool;
 
 /// 图书仓储
@@ -80,6 +80,34 @@ impl BookRepository {
         .fetch_all(&self.pool)
         .await?;
         Ok(books)
+    }
+
+    pub async fn update(&self, id: i64, title: Option<&str>, author: Option<&str>, file_size: Option<i64>) -> Result<Book> {
+        let book = self.find_by_id(id).await?.ok_or_else(|| {
+            crate::errors::AppError::Unknown(format!("Book with id {} not found", id))
+        })?;
+
+        let new_title = title.unwrap_or(&book.title);
+        let new_author = author.or(book.author.as_deref());
+        let new_file_size = file_size.or(book.file_size);
+
+        sqlx::query(
+            r#"
+            UPDATE books
+            SET title = ?, author = ?, file_size = ?
+            WHERE id = ?
+            "#
+        )
+        .bind(new_title)
+        .bind(new_author)
+        .bind(new_file_size)
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        self.find_by_id(id).await?.ok_or_else(|| {
+            crate::errors::AppError::Unknown("Failed to update book".to_string())
+        })
     }
 }
 
@@ -218,5 +246,39 @@ impl WordCacheRepository {
         .execute(&self.pool)
         .await?;
         Ok(())
+    }
+}
+
+/// 词典仓储 - 查询本地朗文词典
+pub struct DictionaryRepository {
+    pool: SqlitePool,
+}
+
+impl DictionaryRepository {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    /// 精确匹配查词
+    pub async fn lookup_exact(&self, word: &str) -> Result<Vec<DictionaryEntry>> {
+        let entries = sqlx::query_as::<_, DictionaryEntry>(
+            "SELECT entry as word, paraphrase as definition FROM mdx WHERE LOWER(entry) = LOWER(?)"
+        )
+        .bind(word.to_lowercase())
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(entries)
+    }
+
+    /// 模糊匹配查词
+    pub async fn lookup_fuzzy(&self, word: &str) -> Result<Vec<DictionaryEntry>> {
+        let pattern = format!("%{}%", word.to_lowercase());
+        let entries = sqlx::query_as::<_, DictionaryEntry>(
+            "SELECT entry as word, paraphrase as definition FROM mdx WHERE LOWER(entry) LIKE LOWER(?) LIMIT 10"
+        )
+        .bind(pattern)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(entries)
     }
 }

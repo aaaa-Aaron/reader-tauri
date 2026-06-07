@@ -3,7 +3,7 @@
  */
 
 import { open } from '@tauri-apps/plugin-dialog';
-import { readFile, copyFile, mkdir } from '@tauri-apps/plugin-fs';
+import { readFile, copyFile, mkdir, stat } from '@tauri-apps/plugin-fs';
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -55,6 +55,14 @@ export const fileService = {
    */
   async readFileBytesViaCommand(path: string): Promise<number[]> {
     return await invoke<number[]>('read_file_bytes', { path });
+  },
+
+  /**
+   * 获取文件大小
+   */
+  async getFileSize(path: string): Promise<number> {
+    const fileInfo = await stat(path);
+    return fileInfo.size;
   },
 
   /**

@@ -20,11 +20,14 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
     std::fs::create_dir_all(&app_dir)?;
     
     let db_path = app_dir.join("e_reader.db");
-    let db_url = format!("sqlite:{}", db_path.to_str().unwrap());
+    // let db_url = format!("sqlite:{}", db_path.to_str().unwrap());
+    let db_url = "C:/Users/Aaron/AppData/Roaming/com.aaron.e-reader-tauri/e_reader.db";
+    // println!("{}", db_url);
+    // println!("db_path{:?}",db_path);
     
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&db_url)
+        .connect(db_url)
         .await?;
     
     // Create tables
@@ -82,6 +85,49 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
     Ok(pool)
 }
 
+/// Initialize dictionary database (read-only)
+async fn init_dict_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<dyn std::error::Error>> {
+    let app_dir = app_handle.path().app_data_dir()?;
+    let dict_dir = app_dir.join("dict");
+    std::fs::create_dir_all(&dict_dir)?;
+    
+    let dict_dest = dict_dir.join("LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
+
+    // If dictionary DB doesn't exist in app data, try to copy from bundled resources
+    if !dict_dest.exists() {
+        // Try resource dir first
+        if let Ok(resource_dir) = app_handle.path().resource_dir() {
+            let bundled_dict = resource_dir.join("dict").join("LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
+            if bundled_dict.exists() {
+                std::fs::copy(&bundled_dict, &dict_dest)?;
+                println!("Dictionary DB copied from resource dir");
+            }
+        }
+        
+        // If still not found, try dev directory
+        if !dict_dest.exists() {
+            let dev_dict = std::path::PathBuf::from("dict/LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
+            if dev_dict.exists() {
+                std::fs::copy(&dev_dict, &dict_dest)?;
+                println!("Dictionary DB copied from dev directory");
+            }
+        }
+    }
+
+    if !dict_dest.exists() {
+        return Err("Dictionary DB not found".into());
+    }
+
+    let dict_url = format!("sqlite:{}", dict_dest.to_str().unwrap());
+    
+    let pool = SqlitePoolOptions::new()
+        .max_connections(2)
+        .connect(&dict_url)
+        .await?;
+
+    Ok(pool)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -96,7 +142,20 @@ pub fn run() {
             tauri::async_runtime::block_on(async move {
                 match init_db(&app_handle).await {
                     Ok(pool) => {
-                        let state = Arc::new(AppState { db_pool: pool });
+                        // Initialize dictionary DB
+                        let dict_pool = match init_dict_db(&app_handle).await {
+                            Ok(dp) => {
+                                println!("Dictionary database initialized successfully");
+                                dp
+                            }
+                            Err(e) => {
+                                eprintln!("Failed to initialize dictionary DB (non-fatal): {}", e);
+                                // Use main pool as fallback (won't have mdx table but won't crash)
+                                pool.clone()
+                            }
+                        };
+
+                        let state = Arc::new(AppState { db_pool: pool, dict_pool });
                         app_handle.manage(state);
                         println!("Database initialized successfully");
                     }
@@ -112,6 +171,7 @@ pub fn run() {
             commands::get_all_books,
             commands::get_book_by_id,
             commands::create_book,
+            commands::update_book,
             commands::delete_book,
             commands::search_books,
             commands::translate_text,

@@ -3,7 +3,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { Book, CreateBookRequest } from '../types/book';
+import type { Book, CreateBookRequest, UpdateBookRequest } from '../types/book';
 
 export const bookService = {
   /**
@@ -25,6 +25,13 @@ export const bookService = {
    */
   async createBook(request: CreateBookRequest): Promise<Book> {
     return await invoke<Book>('create_book', { request });
+  },
+
+  /**
+   * 更新图书记录
+   */
+  async updateBook(request: UpdateBookRequest): Promise<Book> {
+    return await invoke<Book>('update_book', { request });
   },
 
   /**

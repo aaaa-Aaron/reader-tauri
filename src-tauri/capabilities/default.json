@@ -11,6 +11,19 @@
     "fs:allow-appdata-meta",
     "fs:allow-read",
     "fs:allow-write",
+    "fs:allow-copy-file",
+    "fs:allow-mkdir",
+    "fs:allow-stat",
+    "fs:allow-exists",
+    "fs:allow-read-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {"path": "$APPDATA/**"},
+        {"path": "$APPDATA"},
+        {"path": "$HOME/**"}
+      ]
+    },
     "dialog:default",
     "http:default",
     "shell:default"

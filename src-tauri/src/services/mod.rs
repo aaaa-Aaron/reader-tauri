@@ -1,6 +1,6 @@
-use crate::dto::{TranslationRequest, TranslationResult, VocabularyItem, QueryDetailItem, StatisticsSummary, ApiTranslationResponse};
+use crate::dto::{DictionaryResult, TranslationRequest, TranslationResult, VocabularyItem, QueryDetailItem, StatisticsSummary, ApiTranslationResponse};
 use crate::errors::Result;
-use crate::repositories::{BookRepository, QueryRecordRepository, WordCacheRepository};
+use crate::repositories::{BookRepository, DictionaryRepository, QueryRecordRepository, WordCacheRepository};
 use sqlx::SqlitePool;
 
 /// 图书服务
@@ -34,20 +34,26 @@ impl BookService {
     pub async fn search_books(&self, query: &str) -> Result<Vec<crate::models::Book>> {
         self.repo.search(query).await
     }
+
+    pub async fn update_book(&self, id: i64, title: Option<&str>, author: Option<&str>, file_size: Option<i64>) -> Result<crate::models::Book> {
+        self.repo.update(id, title, author, file_size).await
+    }
 }
 
 /// 翻译服务
 pub struct TranslationService {
     word_cache_repo: WordCacheRepository,
     query_record_repo: QueryRecordRepository,
+    dict_repo: DictionaryRepository,
     http_client: reqwest::Client,
 }
 
 impl TranslationService {
-    pub fn new(pool: SqlitePool) -> Self {
+    pub fn new(pool: SqlitePool, dict_pool: SqlitePool) -> Self {
         Self {
             word_cache_repo: WordCacheRepository::new(pool.clone()),
             query_record_repo: QueryRecordRepository::new(pool),
+            dict_repo: DictionaryRepository::new(dict_pool),
             http_client: reqwest::Client::new(),
         }
     }
@@ -57,11 +63,48 @@ impl TranslationService {
         let from = request.from.as_deref().unwrap_or("auto");
         let to = request.to.as_deref().unwrap_or("zh-CHS");
 
-        // 1. Check cache first
+        // 1. 尝试词典精确匹配
+        if let Ok(entries) = self.dict_repo.lookup_exact(text).await {
+            if let Some(entry) = entries.first() {
+                let query_type = if text.len() > 20 { "sentence" } else { "word" };
+                self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+
+                return Ok(TranslationResult {
+                    original_text: text.to_string(),
+                    data_source: "dictionary".to_string(),
+                    dictionary_result: Some(DictionaryResult {
+                        word: entry.word.clone(),
+                        definition: entry.definition.clone(),
+                    }),
+                    api_result: None,
+                    success: true,
+                });
+            }
+        }
+
+        // 2. 尝试词典模糊匹配
+        if let Ok(entries) = self.dict_repo.lookup_fuzzy(text).await {
+            if let Some(entry) = entries.first() {
+                let query_type = if text.len() > 20 { "sentence" } else { "word" };
+                self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+
+                return Ok(TranslationResult {
+                    original_text: text.to_string(),
+                    data_source: "dictionary".to_string(),
+                    dictionary_result: Some(DictionaryResult {
+                        word: entry.word.clone(),
+                        definition: entry.definition.clone(),
+                    }),
+                    api_result: None,
+                    success: true,
+                });
+            }
+        }
+
+        // 3. 检查缓存
         if let Some(cache) = self.word_cache_repo.find_by_word(text, from, to).await? {
             let explains = cache.explains.map(|e| serde_json::from_str(&e).unwrap_or_default());
-            
-            // Record query
+
             let query_type = if text.len() > 20 { "sentence" } else { "word" };
             self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
 
@@ -81,10 +124,10 @@ impl TranslationService {
             });
         }
 
-        // 2. Call API (simplified version without dictionary lookup for now)
+        // 4. 调用在线API
         let result = self.call_translation_api(text, from, to).await;
 
-        // 3. Cache and record
+        // 缓存结果
         if let Ok(ref api_result) = result {
             let explains_str = api_result.explains.as_ref().map(|e| serde_json::to_string(e).unwrap_or_default());
             self.word_cache_repo.create(text, from, to, &api_result.translated, api_result.phonetic.as_deref(), explains_str.as_deref()).await.ok();
@@ -112,8 +155,8 @@ impl TranslationService {
     }
 
     async fn call_translation_api(&self, text: &str, from: &str, to: &str) -> Result<ApiTranslationResponse> {
-        // Simplified mock implementation
-        // In real implementation, call Youdao API here
+        // TODO: 接入有道翻译API
+        // 当前为简化实现
         Ok(ApiTranslationResponse {
             original: text.to_string(),
             translated: format!("[Translated] {}", text),
@@ -125,7 +168,6 @@ impl TranslationService {
     }
 
     pub async fn get_cached_translation(&self, _word: &str) -> Result<Option<TranslationResult>> {
-        // Simplified implementation
         Ok(None)
     }
 }
