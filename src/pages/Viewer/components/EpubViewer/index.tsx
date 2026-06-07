@@ -61,37 +61,16 @@ const EpubViewer: React.FC<EpubViewerProps> = ({
     prev: async () => {
       if (renditionRef.current) {
         try {
-          const currentLoc = renditionRef.current.currentLocation();
-          console.log('Current location before prev:', currentLoc);
-          const result = renditionRef.current.prev();
-          console.log('prev() returned:', result);
-          if (result instanceof Promise) {
-            await result.then(() => {
-              console.log('prev() resolved');
-              const newLoc = renditionRef.current?.currentLocation();
-              console.log('Current location after prev:', newLoc);
-            }).catch(err => console.error('prev() promise rejected:', err));
-          }
+          renditionRef.current.prev();
         } catch (err) {
           console.warn('Failed to navigate prev:', err);
         }
       }
     },
     next: async () => {
-      console.log('useImperativeHandle next called, renditionRef.current:', renditionRef.current);
       if (renditionRef.current) {
         try {
-          const currentLoc = renditionRef.current.currentLocation();
-          console.log('Current location before next:', currentLoc);
-          const result = renditionRef.current.next();
-          console.log('next() returned:', result);
-          if (result instanceof Promise) {
-            await result.then(() => {
-              console.log('next() resolved');
-              const newLoc = renditionRef.current?.currentLocation();
-              console.log('Current location after next:', newLoc);
-            }).catch(err => console.error('next() promise rejected:', err));
-          }
+          renditionRef.current.next();
         } catch (err) {
           console.warn('Failed to navigate next:', err);
         }
@@ -176,7 +155,6 @@ const EpubViewer: React.FC<EpubViewerProps> = ({
         });
 
         renditionRef.current = rendition;
-        console.log('Rendition created and set:', rendition);
 
         try {
           await rendition.display();
@@ -347,12 +325,10 @@ const EpubViewer: React.FC<EpubViewerProps> = ({
   }, [dimensions]);
 
   const handlePrevClick = () => {
-    console.log('handlePrevClick called, renditionRef.current:', renditionRef.current);
     onPrevPage();
   };
 
   const handleNextClick = () => {
-    console.log('handleNextClick called, renditionRef.current:', renditionRef.current);
     onNextPage();
   };
 

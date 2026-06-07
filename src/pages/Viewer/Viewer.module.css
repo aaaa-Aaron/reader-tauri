@@ -79,13 +79,6 @@ body {
     background: rgba(0, 0, 0, 0.05);
 }
 
-.headerTitle {
-    font-size: 1.125rem;
-    font-weight: 600;
-    color: var(--mdn-primary);
-    letter-spacing: -0.01em;
-}
-
 .headerCenter {
     display: flex;
     align-items: center;
@@ -138,23 +131,6 @@ body {
     border-color: #1a1a1a;
 }
 
-.searchBox {
-    display: flex;
-    align-items: center;
-    position: relative;
-}
-
-.searchIcon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--mdn-text-secondary);
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-}
-
 .searchInput {
     padding: 8px 12px 8px 36px;
     border: 1px solid var(--mdn-border);
@@ -169,10 +145,6 @@ body {
     outline: none;
     border-color: #d0d0d0;
     background: white;
-}
-
-.searchBtn {
-    display: none;
 }
 
 .settings {
@@ -566,9 +538,6 @@ body {
 }
 
 @media (max-width: 1024px) {
-    .searchInput {
-        width: 160px;
-    }
 
     .sidebarControls {
         margin-right: 0;

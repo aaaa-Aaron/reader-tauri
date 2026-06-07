@@ -4,7 +4,6 @@ import { bookService } from '../../services/bookService';
 import type { Book } from '../../types/book';
 import styles from './Viewer.module.css';
 import './LongmanDictionaryOfContemporaryEnglish6thEnEn.css';
-import PdfViewer from './components/PdfViewer';
 import EpubViewer from './components/EpubViewer';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
@@ -12,20 +11,16 @@ import TranslationPopup from './components/TranslationPopup';
 
 const Viewer: React.FC = () => {
   const { id } = useParams();
-  const pdfViewerRef = useRef<any>(null);
   const epubViewerRef = useRef<any>(null);
   const [numPages, setNumPages] = useState<number>(0);
   const [book, setBook] = useState<Book | undefined>(undefined);
   const [isBookLoading, setIsBookLoading] = useState<boolean>(true);
   const [outline, setOutline] = useState<any[]>([]);
-  const [pdfInstance, setPdfInstance] = useState<any>(null);
   const [selectedWord, setSelectedWord] = useState<string>('');
   const [selectedContext, setSelectedContext] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [showSidebarLeft, setShowSidebarLeft] = useState<boolean>(true);
   const isTranslatingRef = useRef<boolean>(false);
-  const isPdf = book?.format?.toLowerCase() === 'pdf';
-  const isEpub = book?.format?.toLowerCase() === 'epub';
 
   // Click outside to deselect text
   useEffect(() => {
@@ -73,49 +68,12 @@ const Viewer: React.FC = () => {
     fetchBook();
   }, [id]);
 
-  // PDF document load success
-  const onDocumentLoadSuccess = useCallback(async (pdf: any) => {
-    const numPages = pdf.numPages;
-    setNumPages(numPages);
-    setPdfInstance(pdf);
-
-    try {
-      const outline = await pdf.getOutline();
-
-      const processOutline = (items: any[]): any[] => {
-        return items.map(item => {
-          const processedItem = {
-            ...item,
-            items: item.items ? processOutline(item.items) : undefined
-          };
-          return processedItem;
-        });
-      };
-
-      const processedOutline = processOutline(outline || []);
-      setOutline(processedOutline);
-    } catch (error) {
-      console.warn('Could not get outline:', error);
-      setOutline([]);
-    }
-  }, []);
-
   // EPUB selected text handler
   const handleEpubSelectedText = useCallback((text: string, context?: string) => {
     if (isTranslatingRef.current) return;
     if (text.trim().length > 0) {
       setSelectedWord(text.trim());
       setSelectedContext(context || '');
-    }
-  }, []);
-
-  // PDF text select handler
-  const handlePdfTextSelect = useCallback(() => {
-    if (isTranslatingRef.current) return;
-
-    const selection = window.getSelection();
-    if (selection && selection.toString().trim().length > 0) {
-      setSelectedWord(selection.toString().trim());
     }
   }, []);
 
@@ -126,21 +84,19 @@ const Viewer: React.FC = () => {
 
   // Navigation handlers
   const handlePrevPage = useCallback(() => {
-    console.log('handlePrevPage called, epubViewerRef.current:', epubViewerRef.current);
-    if (isEpub && epubViewerRef.current) {
+    if (epubViewerRef.current) {
       epubViewerRef.current.prev();
       setCurrentPage(prev => Math.max(1, prev - 1));
     }
-  }, [isEpub]);
+  }, []);
 
   const handleNextPage = useCallback(() => {
-    console.log('handleNextPage called, epubViewerRef.current:', epubViewerRef.current);
-    if (isEpub && epubViewerRef.current) {
+    if (epubViewerRef.current) {
       epubViewerRef.current.next();
     } else {
       setCurrentPage(prev => Math.min(numPages, prev + 1));
     }
-  }, [isEpub, numPages]);
+  }, [numPages]);
 
   // EPUB load success
   const onEpubLoadSuccess = useCallback(async (_book: any) => {
@@ -190,8 +146,7 @@ const Viewer: React.FC = () => {
   }
 
   // Convert file path to URL for PDF
-  const pdfUrl = isPdf ? (book.path.startsWith('file://') ? book.path : `file://${book.path}`) : '';
-  const epubUrl = isEpub ? book.path : '';
+  const epubUrl = book.path;
 
   return (
     <div className={styles.app}>
@@ -209,50 +164,29 @@ const Viewer: React.FC = () => {
           showSidebarLeft={showSidebarLeft}
           onToggleSidebar={() => setShowSidebarLeft(!showSidebarLeft)}
           onPageClick={(dest) => {
-            if (isEpub && epubViewerRef.current) {
+            if (epubViewerRef.current) {
               try {
                 epubViewerRef.current.goTo(dest);
               } catch (err) {
                 console.warn('EPUB navigation failed:', err);
               }
-            } else if (pdfViewerRef.current) {
-              if (typeof pdfViewerRef.current.handleOutlineClick === 'function') {
-                pdfViewerRef.current.handleOutlineClick(dest);
-              }
             }
           }}
         />
 
-        <main className={styles.pdfMain} id="pdf-viewer">
-          {isPdf && (
-            <PdfViewer
-              ref={pdfViewerRef}
-              file={pdfUrl}
-              numPages={numPages}
-              currentPage={currentPage}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onTextSelect={handlePdfTextSelect}
-              onPageChange={setCurrentPage}
-              onPrevPage={handlePrevPage}
-              onNextPage={handleNextPage}
-              pdfInstance={pdfInstance}
-            />
-          )}
-
-          {isEpub && (
-            <EpubViewer
-              ref={epubViewerRef}
-              file={epubUrl}
-              onSelectedText={handleEpubSelectedText}
-              onPrevPage={handlePrevPage}
-              onNextPage={handleNextPage}
-              onLoadSuccess={onEpubLoadSuccess}
-              onPageChange={(page, total) => {
-                setCurrentPage(page);
-                setNumPages(total);
-              }}
-            />
-          )}
+        <main className={styles.pdfMain} id="epub-viewer">
+          <EpubViewer
+            ref={epubViewerRef}
+            file={epubUrl}
+            onSelectedText={handleEpubSelectedText}
+            onPrevPage={handlePrevPage}
+            onNextPage={handleNextPage}
+            onLoadSuccess={onEpubLoadSuccess}
+            onPageChange={(page, total) => {
+              setCurrentPage(page);
+              setNumPages(total);
+            }}
+          />
         </main>
       </div>
 
