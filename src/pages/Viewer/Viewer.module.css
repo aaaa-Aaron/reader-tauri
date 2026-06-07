@@ -31,6 +31,7 @@ body {
     flex-direction: column;
     height: 100vh;
     overflow: hidden;
+    position: relative;
 }
 
 .viewerContainer {
@@ -40,8 +41,22 @@ body {
     height: 100vh;
 }
 
-/* Header */
+/* Header wrapper - hover trigger area */
+.headerWrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    z-index: 99;
+}
+
+/* Header - hidden by default, show on hover */
 .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -51,6 +66,17 @@ body {
     box-shadow: var(--mdn-shadow);
     z-index: 99;
     min-height: 60px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.6s ease, visibility 0.6s ease;
+    pointer-events: none;
+}
+
+/* Show header when hovering wrapper */
+.headerWrapper:hover .header {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
 }
 
 .headerLeft {
@@ -214,6 +240,12 @@ body {
     flex: 1;
     overflow: hidden;
     background-color: var(--mdn-background);
+    transition: transform 0.3s ease;
+}
+
+/* Move content down when header is visible */
+.headerWrapper:hover + .mainContent {
+    transform: translateY(60px);
 }
 
 /* Sidebar */
@@ -553,12 +585,6 @@ body {
         padding: 12px 16px;
     }
 
-    .headerCenter {
-        order: 3;
-        flex-basis: 100%;
-        justify-content: center;
-    }
-
     .leftSidebar {
         position: fixed;
         left: -280px;
@@ -578,10 +604,6 @@ body {
 
     .headerCenter {
         gap: 12px;
-    }
-
-    .pageInfo {
-        font-size: 0.75rem;
     }
 }
 
