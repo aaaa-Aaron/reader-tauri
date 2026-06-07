@@ -150,9 +150,6 @@ const Viewer: React.FC = () => {
   return (
     <div className={styles.app}>
       <Header
-        book={book}
-        numPages={numPages}
-        currentPage={currentPage}
         showSidebarLeft={showSidebarLeft}
         onToggleSidebar={() => setShowSidebarLeft(!showSidebarLeft)}
       />
@@ -161,7 +158,6 @@ const Viewer: React.FC = () => {
         <Sidebar
           outline={outline}
           showSidebarLeft={showSidebarLeft}
-          onToggleSidebar={() => setShowSidebarLeft(!showSidebarLeft)}
           onPageClick={(dest) => {
             if (epubViewerRef.current) {
               try {

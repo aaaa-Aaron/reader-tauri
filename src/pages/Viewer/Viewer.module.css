@@ -47,7 +47,7 @@ body {
     top: 0;
     left: 0;
     right: 0;
-    height: 80px;
+    height: 48px;
     z-index: 99;
 }
 
@@ -60,15 +60,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 24px;
+    padding: 8px 24px;
     background-color: var(--mdn-surface);
     border-bottom: 1px solid var(--mdn-border);
     box-shadow: var(--mdn-shadow);
     z-index: 99;
-    min-height: 60px;
+    min-height: 48px;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.6s ease, visibility 0.6s ease;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
     pointer-events: none;
 }
 
@@ -134,11 +134,12 @@ body {
 .sidebarToggleBtn {
     width: 32px;
     height: 32px;
-    border: 1px solid var(--mdn-border);
-    background: var(--mdn-surface);
+    border: none;
+    background: transparent;
     border-radius: var(--mdn-radius);
     cursor: pointer;
     font-size: 0.875rem;
+    color: #666;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
@@ -147,14 +148,13 @@ body {
 }
 
 .sidebarToggleBtn:hover {
-    background-color: var(--mdn-background);
-    border-color: #999;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
 }
 
 .sidebarToggleBtn.active {
-    background-color: #1a1a1a;
-    color: white;
-    border-color: #1a1a1a;
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #333;
 }
 
 .searchInput {
@@ -179,18 +179,19 @@ body {
 
 .settingsBtn {
     padding: 8px;
-    border: 1px solid var(--mdn-border);
-    background: var(--mdn-surface);
+    border: none;
+    background: transparent;
     border-radius: var(--mdn-radius);
     cursor: pointer;
     transition: all 0.15s ease;
     font-size: 0.875rem;
+    color: #666;
     outline: none;
 }
 
 .settingsBtn:hover {
-    background-color: var(--mdn-background);
-    border-color: #999;
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
 }
 
 .settingsDropdown {
@@ -245,7 +246,7 @@ body {
 
 /* Move content down when header is visible */
 .headerWrapper:hover + .mainContent {
-    transform: translateY(60px);
+    transform: translateY(48px);
 }
 
 /* Sidebar */
@@ -256,23 +257,6 @@ body {
     display: flex;
     flex-direction: column;
     transition: all 0.2s ease;
-}
-
-.sidebarHeader {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--mdn-border);
-    background-color: var(--mdn-surface);
-}
-
-.sidebarHeader h2 {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--mdn-text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
 }
 
 .sidebarToggle {
