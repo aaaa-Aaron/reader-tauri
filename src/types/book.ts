@@ -2,7 +2,7 @@
  * 图书类型定义
  */
 
-export interface Book {
+export interface IBook {
   id: number;
   title: string;
   format: 'pdf' | 'epub';

@@ -3,35 +3,35 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
-import type { Book, CreateBookRequest, UpdateBookRequest } from '../types/book';
+import type { IBook, CreateBookRequest, UpdateBookRequest } from '../types/book';
 
 export const bookService = {
   /**
    * 获取所有图书
    */
-  async getAllBooks(): Promise<Book[]> {
-    return await invoke<Book[]>('get_all_books');
+  async getAllBooks(): Promise<IBook[]> {
+    return await invoke<IBook[]>('get_all_books');
   },
 
   /**
    * 根据ID获取图书
    */
-  async getBookById(id: number): Promise<Book | null> {
-    return await invoke<Book | null>('get_book_by_id', { id });
+  async getBookById(id: number): Promise<IBook | null> {
+    return await invoke<IBook | null>('get_book_by_id', { id });
   },
 
   /**
    * 创建图书记录
    */
-  async createBook(request: CreateBookRequest): Promise<Book> {
-    return await invoke<Book>('create_book', { request });
+  async createBook(request: CreateBookRequest): Promise<IBook> {
+    return await invoke<IBook>('create_book', { request });
   },
 
   /**
    * 更新图书记录
    */
-  async updateBook(request: UpdateBookRequest): Promise<Book> {
-    return await invoke<Book>('update_book', { request });
+  async updateBook(request: UpdateBookRequest): Promise<IBook> {
+    return await invoke<IBook>('update_book', { request });
   },
 
   /**
@@ -44,7 +44,7 @@ export const bookService = {
   /**
    * 搜索图书
    */
-  async searchBooks(query: string): Promise<Book[]> {
-    return await invoke<Book[]>('search_books', { query });
+  async searchBooks(query: string): Promise<IBook[]> {
+    return await invoke<IBook[]>('search_books', { query });
   }
 };
