@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from '../Sidebar/Sidebar.module.css';
 
 interface TableOfContentsProps {
@@ -7,24 +7,65 @@ interface TableOfContentsProps {
 }
 
 const TableOfContents: React.FC<TableOfContentsProps> = ({ outline, onPageClick }) => {
-  const renderOutlineItems = (items: any[]) => {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (id: string) => {
+    setExpandedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const renderOutlineItems = (items: any[], parentId: string = '') => {
     if (!items || items.length === 0) return null;
 
     return items.map((item, index) => {
       const hasChildren = item.items && Array.isArray(item.items) && item.items.length > 0;
-      const itemClass = `${styles.tocItem} ${hasChildren ? styles.hasChildren : ''}`;
+      const itemId = `${parentId}-${index}`;
+      const isExpanded = expandedIds.has(itemId);
+      const itemClass = `${styles.tocItem} ${hasChildren ? styles.hasChildren : ''} ${isExpanded ? styles.expanded : ''}`;
+
+      const handleTitleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (item.dest && onPageClick) {
+          onPageClick(item.dest, item);
+        }
+      };
+
+      const handleExpandClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (hasChildren) {
+          toggleExpand(itemId);
+        }
+      };
+
+      const trimmedTitle = item.title?.trim() || '';
 
       return (
-        <li key={index} className={itemClass}>
+        <li key={itemId} className={itemClass}>
           <button
-            onClick={() => item.dest && onPageClick?.(item.dest, item)}
-            disabled={!item.dest || !onPageClick}
+            onClick={handleTitleClick}
+            disabled={!item.dest}
+            className={hasChildren ? styles.hasChildrenBtn : ''}
           >
-            {item.title}
+            {hasChildren && (
+              <span
+                className={styles.expandIcon}
+                onClick={handleExpandClick}
+              >
+                {isExpanded ? '▼' : '▶'}
+              </span>
+            )}
+            <span className={styles.tocTitle}>{trimmedTitle}</span>
           </button>
           {hasChildren && (
-            <ul className={styles.tocChildren}>
-              {renderOutlineItems(item.items)}
+            <ul className={`${styles.tocChildren} ${isExpanded ? styles.expanded : ''}`}>
+              {renderOutlineItems(item.items, itemId)}
             </ul>
           )}
         </li>

@@ -1,125 +1,112 @@
 ---
-name: "problem-recorder"
-description: "Records coding problems, architecture decisions, improvement ideas, and module-level code maps to a shared local SQLite DB. Invoke whenever you solve a bug, make a tech decision, identify a refactor, learn a new area of a codebase, or want to remember something about the current project for next time."
+name: problem-recorder
+description: Record & retrieve coding problems, architecture decisions, improvements, and module summaries to a local SQLite knowledge base. Cross-project ready — works from any repo.
+command_template: python {script_path} {subcommand} {args}
+tags: [knowledge-base, documentation, architecture, sqlite, cross-project]
 ---
 
-# Problem Recorder — Cross-project Knowledge Base
+## Purpose
+Persist structured notes about problems you hit / decisions you make / improvements you want / module summaries you write. Any project, any language. Query them later by text, tag, project, or file.
 
-This skill tells the AI agent how to write and read structured knowledge about
-the codebase it is working on — so future iterations (and other agents) can
-build on what was learned instead of re-discovering it from scratch.
+**No dependency** beyond Python 3 standard library (sqlite3, argparse, json, pathlib).
 
-The backing tool is a zero-dependency Python script at:
+## Script Location
 
-- **Script path**: `~/.trae-knowledge/scripts/problem_kb.py`
-- **Default DB**:  `~/.trae-knowledge/knowledge.db`
-- **Override**:    `$env:PROBLEM_KB_PATH` (env var) or `--db /path/to/file.db`
+Preferred path (global, usable from any project):
 
-On Windows the agent expands `~` to `$env:USERPROFILE`.
+- Linux / macOS: `$HOME/.trae-knowledge/scripts/problem_kb.py`
+- Windows: `%APPDATA%\trae_kb\scripts\problem_kb.py`
 
-## How to invoke — short form
+If the global script doesn't exist in the current session, use the project-local copy:
+`scripts/problem_kb.py`
 
-The agent should prefer the following idioms. They work from **any** project
-directory and do **not** assume the script was copied into the project.
+## Database Location
 
-```bash
-# Record a bug/pitfall that was just solved
-python ~/.trae-knowledge/scripts/problem_kb.py add-problem \
-    --project "<project-or-repo-name>" \
-    --title "<concise specific headline, not 'bug fixed'>" \
-    --category "<react_pattern | rust_lifetime | build | dependency | architecture | ...>" \
-    --severity "<low | medium | high | critical>" \
-    --problem "<what the user / test observed>" \
-    --root-cause "<why it happened, at the deepest level found>" \
-    --solution "<the actual fix>" \
-    --lessons "<the reusable take-away — MOST IMPORTANT FIELD>" \
-    --files "<comma-separated relevant source file paths>" \
-    --tags "<comma-separated tags, e.g. 'react,useRef,closure'>"
+Default (auto-created on first write):
 
-# Record a tech / architecture decision
-python ~/.trae-knowledge/scripts/problem_kb.py add-decision \
+- `<current-working-directory>/.knowledge/knowledge.db`
+- Override with `--db /absolute/path/to/shared.db` or set `$PROBLEM_KB_PATH`
+
+Each project can keep its own `.knowledge/knowledge.db`; set `PROBLEM_KB_PATH` to share one DB across projects.
+
+## Usage Pattern
+
+When you **solve a bug** during this conversation, immediately record:
+
+```
+python scripts/problem_kb.py add-problem \
     --project "<project-name>" \
-    --title "<the decision in one line>" \
-    --type "<architecture | tech_choice | product | design_pattern | workflow>" \
-    --background "<why the decision was needed>" \
-    --decision "<what was chosen and why>" \
-    --impact "<which modules / areas change>" \
-    --tags "..."
+    --title "<short summary>" \
+    --category "<bug|state_management|perf|build|..." \
+    --severity low|medium|high|critical \
+    --problem "<description of what happened>" \
+    --root-cause "<why it happened>" \
+    --solution "<what fixed it>" \
+    --lessons "<takeaway>" \
+    --files "path/to/file1.ts,path/to/file2.py" \
+    --tags "tag1,tag2"
+```
 
-# Record a refactor / perf / feature idea for later
-python ~/.trae-knowledge/scripts/problem_kb.py add-improvement \
+When you make an **architecture/tech-choice decision**, record:
+
+```
+python scripts/problem_kb.py add-decision \
     --project "<project-name>" \
-    --title "<one-line description>" \
-    --category "<refactor | feature | perf | dx | test | security>" \
-    --priority "<low | medium | high>" \
-    --rationale "<why this is worth doing later>" \
-    --related-problems "PROB-003, PROB-007" \
-    --tags "..."
+    --title "<decision title>" \
+    --type architecture|tech_choice|product|design_pattern|workflow \
+    --decision "<what was decided>" \
+    --background "<context and why" \
+    --impact "<what areas are affected>" \
+    --tags "tag1,tag2"
+```
 
-# Build a code-map entry (one per module / directory) to avoid full-project scans
-python ~/.trae-knowledge/scripts/problem_kb.py add-module \
+When you identify an **improvement/feature idea**:
+
+```
+python scripts/problem_kb.py add-improvement \
+    --project "<project-name>" \
+    --title "<idea title>" \
+    --category refactor|feature|perf|dx|test|security \
+    --priority low|medium|high \
+    --rationale "<why it matters>" \
+    --tags "tag1,tag2"
+```
+
+When you explore/understand a **code module** (building the code map):
+
+```
+python scripts/problem_kb.py add-module \
     --project "<project-name>" \
     --path "src/pages/Viewer" \
-    --purpose "<short one-line purpose>" \
-    --public-api "<what it exports / exposes>" \
-    --dependencies "<what other modules or 3rd-party libs it uses>" \
-    --key-files "<the 2-4 most important files>" \
-    --summary "<2-3 sentences describing shape, data flow, and gotchas>" \
-    --tags "..."
+    --purpose "<what this module does" \
+    --summary "<architecture notes>" \
+    --dependencies "<what it imports / depends on>" \
+    --key-files "file1.tsx,file2.ts" \
+    --tags "tag1,tag2"
 ```
 
-## Reading back
+## Query
 
-```bash
-# Stats + projects tracked
-python ~/.trae-knowledge/scripts/problem_kb.py info
+- `python scripts/problem_kb.py search --text "state"` — cross-table text search
+- `python scripts/problem_kb.py search --tag "react"` — filter by tag
+- `python scripts/problem_kb.py search --project "e-reader"` — filter by project
+- `python scripts/problem_kb.py list --table problem_records` — list a single table
+- `python scripts/problem_kb.py show --id PROB-001` — full details of one record
+- `python scripts/problem_kb.py info` — DB location + counts per table
+- `python scripts/problem_kb.py export --output backup.json` — full JSON export
 
-# Cross-table search (text or tag or project)
-python ~/.trae-knowledge/scripts/problem_kb.py search --project "<project-name>"
-python ~/.trae-knowledge/scripts/problem_kb.py search --tag react
-python ~/.trae-knowledge/scripts/problem_kb.py search --text "closure"
+## Rule: Always Tag With `--project`
 
-# Drill into one record
-python ~/.trae-knowledge/scripts/problem_kb.py show --id PROB-001
-python ~/.trae-knowledge/scripts/problem_kb.py show --id DEC-003
-python ~/.trae-knowledge/scripts/problem_kb.py show --id IMP-002
-python ~/.trae-knowledge/scripts/problem_kb.py show --id MOD-001
+Every record must carry `--project` so queries by project work cross-project. Use a stable, short project slug (repo name is fine).
 
-# List a table with filters
-python ~/.trae-knowledge/scripts/problem_kb.py list --table problem_records --severity high --project "<name>"
-python ~/.trae-knowledge/scripts/problem_kb.py list --table improvements --status proposed
-python ~/.trae-knowledge/scripts/problem_kb.py list --table code_map_modules --project "<name>"
+## Rule: Record While You Code
 
-# Backup everything to JSON
-python ~/.trae-knowledge/scripts/problem_kb.py export --output ./knowledge_backup.json
-```
+Use this skill immediately after:
+1. Solving a non-trivial bug
+2. Making an architecture/tech decision
+3. Identifying a meaningful future improvement
+4. Understanding a new code module (build the code map incrementally)
 
-## When the agent MUST record
+## Rule: Cross-Project Sharing
 
-At the end of every coding session or conversation, the agent should consider
-recording, even if the user didn't explicitly ask:
-
-1. A bug / pitfall was solved → `add-problem`
-2. A significant choice was made → `add-decision`
-3. A clear improvement opportunity is identified → `add-improvement`
-4. A new area of the codebase was understood → `add-module` (once per module)
-
-Then run `info` and `search --project <name>` to confirm the capture and show
-the user what was logged.
-
-## Why --project matters
-
-All records share one SQLite DB. Always pass `--project` so records are
-filterable per repository. The `info` command lists every project that has
-been recorded — it's a quick way to check if previous knowledge exists for
-the current project.
-
-## Suggested tag vocabulary
-
-Use simple, consistent tags so searches are reliable:
-
-- Languages / platforms: `python`, `typescript`, `rust`, `go`, `node`, `browser`
-- Frameworks: `react`, `nextjs`, `vite`, `tauri`, `django`, `fastapi`
-- Concepts: `closure`, `useref`, `useEffect`, `lifetime`, `async`, `sqlite`
-- Problems: `race-condition`, `render-loop`, `dependency-hell`, `state-mismatch`
-- Activities: `refactor`, `debug`, `code-review`, `migration`
+When the same problem or decision is relevant to multiple projects, record it once with `--project` covering all of them, or record it per project with the appropriate `--project` tag. To share a single DB across all projects, point `PROBLEM_KB_PATH` to a shared path.

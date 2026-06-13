@@ -54,7 +54,7 @@ body {
 /* EPUB main area */
 .epubMain {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden; /* 禁止外部滚动，让 EPUB.js 内部处理滚动 */
   padding: 0;
   display: flex;
   justify-content: center;
@@ -66,23 +66,17 @@ body {
 }
 
 /* EPUB container */
-/* .container {
+.container {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-} */
-/* EPUB container */
-.container {
-  position: relative;
   background-color: var(--mdn-surface);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border-radius: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
   user-select: text;
   border: none;
   overflow: hidden;
