@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import ePub, { Book, Rendition } from 'epubjs';
-import { convertFileSrc } from '@tauri-apps/api/core';
+import { readFile } from '@tauri-apps/plugin-fs';
 import { extractSentenceByCfiRange, unfoldNavigation } from '../utils/epubUtils';
 
 interface UseEpubReaderOptions {
@@ -31,15 +31,22 @@ export function useEpubReader({
   useEffect(() => {
     if (!bookPath) return;
 
-    const eBook = ePub(convertFileSrc(bookPath));
-    eBook.ready
-      .then(() => {
+    let eBook: Book | null = null;
+
+    const loadBook = async () => {
+      try {
+        const fileContents = await readFile(bookPath);
+        const arrayBuffer = fileContents.buffer;
+        eBook = ePub(arrayBuffer);
+        await eBook.ready;
         eBookRef.current = eBook;
         setIsReady(true);
-      })
-      .catch(err => {
+      } catch (err) {
         console.warn('Failed to load EPUB:', err);
-      });
+      }
+    };
+
+    loadBook();
 
     return () => {
       if (eBookRef.current) {
@@ -117,6 +124,28 @@ export function useEpubReader({
       container.removeEventListener('click', handleClick);
     };
   }, [isReady, onTextSelected, containerRef]);
+
+  // 窗口 resize 和容器尺寸变化处理
+  useEffect(() => {
+    if (!isReady || !renditionRef.current || !containerRef.current) return;
+
+    const handleResize = () => {
+      // 每次都从 ref 获取最新值，避免闭包问题
+      const currentContainer = containerRef.current;
+      const currentRendition = renditionRef.current;
+      if (currentContainer && currentRendition) {
+        currentRendition.resize(currentContainer.clientWidth, currentContainer.clientHeight);
+      }
+    };
+
+    // 使用 ResizeObserver 监听容器尺寸变化
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(containerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isReady, containerRef]);
 
   const prev = useCallback(() => {
     renditionRef.current?.prev();

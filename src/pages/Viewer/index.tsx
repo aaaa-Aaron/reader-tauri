@@ -37,7 +37,9 @@ const Viewer: React.FC = () => {
     setIsLoading(true);
 
     bookService.getBookById(parseInt(id))
-      .then(setBook)
+      .then(book => {
+        setBook(book);
+      })
       .catch(err => console.warn('Failed to load book:', err))
       .finally(() => setIsLoading(false));
 

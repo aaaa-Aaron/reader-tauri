@@ -1,0 +1,67 @@
+{
+  "exported_at": "2026-06-13T15:06:56",
+  "tables": {
+    "problem_records": [
+      {
+        "id": "PROB-001",
+        "project": "e-reader-tauri",
+        "title": "State reset after navigation",
+        "category": "state_management",
+        "severity": "high",
+        "status": "resolved",
+        "context": "React + Tauri",
+        "problem_description": "Component state disappears when navigating back",
+        "root_cause": "Tauri window reload wipes React hooks",
+        "solution": "Persist to localStorage + hydrate on mount",
+        "lessons_learned": "Always separate UI state from domain state",
+        "related_files": "src/pages/Viewer.tsx",
+        "code_before": null,
+        "code_after": null,
+        "tags": "react,tauri,state",
+        "refs": null,
+        "created_at": "2026-06-13T15:05:52",
+        "updated_at": "2026-06-13T15:05:52"
+      }
+    ],
+    "decision_logs": [
+      {
+        "id": "DEC-001",
+        "project": "e-reader-tauri",
+        "type": "architecture",
+        "title": "Use SQLite for knowledge base",
+        "background": null,
+        "considered_options": null,
+        "final_decision": "Single-file cross-project SQLite",
+        "impact_area": null,
+        "related_files": null,
+        "open_questions": null,
+        "author": "AI-Agent",
+        "tags": "architecture",
+        "created_at": "2026-06-13T15:05:52",
+        "updated_at": "2026-06-13T15:05:52"
+      }
+    ],
+    "improvements": [
+      {
+        "id": "IMP-001",
+        "project": "e-reader-tauri",
+        "title": "Add per-page state persistence",
+        "category": "feature",
+        "priority": "medium",
+        "status": "proposed",
+        "effort_estimate": null,
+        "context": null,
+        "rationale": null,
+        "prerequisites": null,
+        "related_files": null,
+        "related_decision_ids": null,
+        "related_problem_ids": null,
+        "tags": "state,persistence",
+        "created_at": "2026-06-13T15:06:55",
+        "updated_at": "2026-06-13T15:06:55"
+      }
+    ],
+    "code_map_modules": [],
+    "knowledge_sessions": []
+  }
+}
