@@ -10,7 +10,6 @@ interface UseEpubReaderOptions {
 }
 
 interface UseEpubReaderReturn {
-  isReady: boolean;
   outline: any[];
   prev: () => void;
   next: () => void;
@@ -24,7 +23,7 @@ export function useEpubReader({
 }: UseEpubReaderOptions): UseEpubReaderReturn {
   const eBookRef = useRef<Book | null>(null);
   const renditionRef = useRef<Rendition | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  // const [isReady, setIsReady] = useState(false);
   const [outline, setOutline] = useState<any[]>([]);
 
   // 创建 EPUB Book 实例
@@ -40,7 +39,7 @@ export function useEpubReader({
         eBook = ePub(arrayBuffer);
         await eBook.ready;
         eBookRef.current = eBook;
-        setIsReady(true);
+        // setIsReady(true);
       } catch (err) {
         console.warn('Failed to load EPUB:', err);
       }
@@ -53,31 +52,38 @@ export function useEpubReader({
         eBookRef.current.destroy();
         eBookRef.current = null;
       }
-      setIsReady(false);
+      // setIsReady(false);
     };
   }, [bookPath]);
 
   // 渲染内容 + 目录
   useEffect(() => {
-    if (!isReady || !containerRef.current || !eBookRef.current) return;
+    if (!containerRef.current || !eBookRef.current) return;
+    const loadRendition = async () => {
 
-    const book = eBookRef.current;
-    const container = containerRef.current;
+      if (!eBookRef.current || !containerRef.current) {
+        return;
+      }
+      const book = eBookRef.current;
+      const container = containerRef.current;
 
-    const rendition = book.renderTo(container, {
-      width: container.clientWidth,
-      height: container.clientHeight,
-      spread: 'none',
-      flow: 'paginated',
-      allowScriptedContent: true
-    });
+      const rendition = book.renderTo(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+        spread: 'none',
+        flow: 'paginated',
+        allowScriptedContent: true
+      });
+      await rendition.start();
 
-    renditionRef.current = rendition;
-    setOutline(unfoldNavigation(book.navigation?.toc));
+      renditionRef.current = rendition;
+      setOutline(unfoldNavigation(book.navigation?.toc));
 
-    rendition.display().catch(err => {
-      console.warn('Display error:', err);
-    });
+      rendition.display().catch(err => {
+        console.warn('Display error:', err);
+      });
+    }
+
 
     return () => {
       if (renditionRef.current) {
@@ -90,7 +96,7 @@ export function useEpubReader({
       }
       setOutline([]);
     };
-  }, [isReady, containerRef]);
+  }, [eBookRef, containerRef]);
 
   // 文本选择 + 点击取消选择事件
   useEffect(() => {
@@ -98,7 +104,6 @@ export function useEpubReader({
 
     const book = eBookRef.current;
     const rendition = renditionRef.current;
-    const container = containerRef.current;
 
     const handleSelected = async (cfiRange: string) => {
       try {
@@ -109,31 +114,38 @@ export function useEpubReader({
       }
     };
 
-    const handleClick = () => {
-      const selection = window.getSelection();
-      if (!selection || selection.toString().trim().length === 0) {
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+
+      // 点击的是链接或按钮时不处理
+      if (target.tagName === 'A' || target.tagName === 'BUTTON') return;
+
+      // event.detail: 1=单击, 2=双击
+      if (e.detail === 1) {
+        // 单击：关闭翻译弹窗（浏览器本身会清除文本选择）
         onTextSelected?.('', '');
       }
     };
 
     rendition.on('selected', handleSelected);
-    container.addEventListener('click', handleClick);
+    rendition.on('click', handleClick);
 
     return () => {
       rendition.off('selected', handleSelected);
-      container.removeEventListener('click', handleClick);
+      rendition.off('click', handleClick);
     };
-  }, [isReady, onTextSelected, containerRef]);
+  }, [onTextSelected, containerRef]);
 
   // 窗口 resize 和容器尺寸变化处理
   useEffect(() => {
-    if (!isReady || !renditionRef.current || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     const handleResize = () => {
       // 每次都从 ref 获取最新值，避免闭包问题
       const currentContainer = containerRef.current;
       const currentRendition = renditionRef.current;
-      if (currentContainer && currentRendition) {
+      // 确保 rendition 存在且有 resize 方法
+      if (currentContainer && currentRendition && typeof currentRendition.resize === 'function') {
         currentRendition.resize(currentContainer.clientWidth, currentContainer.clientHeight);
       }
     };
@@ -145,7 +157,7 @@ export function useEpubReader({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [isReady, containerRef]);
+  }, [containerRef]);
 
   const prev = useCallback(() => {
     renditionRef.current?.prev();
@@ -159,5 +171,5 @@ export function useEpubReader({
     renditionRef.current?.display(dest);
   }, []);
 
-  return { isReady, outline, prev, next, goTo };
+  return { outline, prev, next, goTo };
 }

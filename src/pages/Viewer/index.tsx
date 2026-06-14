@@ -25,7 +25,7 @@ const Viewer: React.FC = () => {
     setSelectedContext(context);
   }, []);
 
-  const { isReady, outline, prev, next, goTo } = useEpubReader({
+  const { outline, prev, next, goTo } = useEpubReader({
     containerRef,
     bookPath: book?.path ?? null,
     onTextSelected: handleTextSelected
