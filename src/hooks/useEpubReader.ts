@@ -23,7 +23,8 @@ export function useEpubReader({
 }: UseEpubReaderOptions): UseEpubReaderReturn {
   const eBookRef = useRef<Book | null>(null);
   const renditionRef = useRef<Rendition | null>(null);
-  // const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [isDisplayed, setIsDisplayed] = useState(false);
   const [outline, setOutline] = useState<any[]>([]);
 
   // 创建 EPUB Book 实例
@@ -39,7 +40,7 @@ export function useEpubReader({
         eBook = ePub(arrayBuffer);
         await eBook.ready;
         eBookRef.current = eBook;
-        // setIsReady(true);
+        setIsReady(true);
       } catch (err) {
         console.warn('Failed to load EPUB:', err);
       }
@@ -52,7 +53,7 @@ export function useEpubReader({
         eBookRef.current.destroy();
         eBookRef.current = null;
       }
-      // setIsReady(false);
+      setIsReady(false);
     };
   }, [bookPath]);
 
@@ -74,16 +75,14 @@ export function useEpubReader({
         flow: 'paginated',
         allowScriptedContent: true
       });
-      await rendition.start();
 
       renditionRef.current = rendition;
       setOutline(unfoldNavigation(book.navigation?.toc));
 
-      rendition.display().catch(err => {
-        console.warn('Display error:', err);
-      });
+      await rendition.display();
+      setIsDisplayed(true);
     }
-
+    loadRendition();
 
     return () => {
       if (renditionRef.current) {
@@ -96,11 +95,11 @@ export function useEpubReader({
       }
       setOutline([]);
     };
-  }, [eBookRef, containerRef]);
+  }, [isReady, containerRef]);
 
   // 文本选择 + 点击取消选择事件
   useEffect(() => {
-    if (!renditionRef.current || !eBookRef.current || !containerRef.current) return;
+    if (!isDisplayed || !renditionRef.current || !eBookRef.current || !containerRef.current) return;
 
     const book = eBookRef.current;
     const rendition = renditionRef.current;
@@ -134,7 +133,7 @@ export function useEpubReader({
       rendition.off('selected', handleSelected);
       rendition.off('click', handleClick);
     };
-  }, [onTextSelected, containerRef]);
+  }, [onTextSelected, containerRef, isDisplayed]);
 
   // 窗口 resize 和容器尺寸变化处理
   useEffect(() => {
