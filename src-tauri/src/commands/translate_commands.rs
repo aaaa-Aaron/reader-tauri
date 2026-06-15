@@ -6,12 +6,12 @@ use super::AppState;
 
 #[tauri::command]
 pub async fn translate_text(request: TranslationRequest, state: State<'_, Arc<AppState>>) -> Result<TranslationResult, String> {
-    let service = TranslationService::new(state.db_pool.clone(), state.dict_pool.clone());
+    let service = TranslationService::new(state.db_pool.clone(), state.mdx_dict.clone());
     service.translate(request).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn get_cached_translation(word: String, state: State<'_, Arc<AppState>>) -> Result<Option<TranslationResult>, String> {
-    let service = TranslationService::new(state.db_pool.clone(), state.dict_pool.clone());
+    let service = TranslationService::new(state.db_pool.clone(), state.mdx_dict.clone());
     service.get_cached_translation(&word).await.map_err(|e| e.to_string())
 }

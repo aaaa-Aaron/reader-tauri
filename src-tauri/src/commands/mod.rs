@@ -1,4 +1,6 @@
+use mdict_rs::MdxFile;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
 pub mod book_commands;
 pub mod file_commands;
@@ -7,7 +9,7 @@ pub mod statistics_commands;
 
 pub struct AppState {
     pub db_pool: SqlitePool,
-    pub dict_pool: SqlitePool,
+    pub mdx_dict: Arc<MdxFile>,
 }
 
 pub use book_commands::*;

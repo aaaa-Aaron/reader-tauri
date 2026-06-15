@@ -1,7 +1,9 @@
 use crate::dto::{DictionaryResult, TranslationRequest, TranslationResult, VocabularyItem, QueryDetailItem, StatisticsSummary, ApiTranslationResponse};
 use crate::errors::Result;
-use crate::repositories::{BookRepository, DictionaryRepository, QueryRecordRepository, WordCacheRepository};
+use crate::repositories::{BookRepository, QueryRecordRepository, WordCacheRepository};
+use mdict_rs::MdxFile;
 use sqlx::SqlitePool;
+use std::sync::Arc;
 
 /// 图书服务
 pub struct BookService {
@@ -44,16 +46,16 @@ impl BookService {
 pub struct TranslationService {
     word_cache_repo: WordCacheRepository,
     query_record_repo: QueryRecordRepository,
-    dict_repo: DictionaryRepository,
+    mdx_dict: Arc<MdxFile>,
     http_client: reqwest::Client,
 }
 
 impl TranslationService {
-    pub fn new(pool: SqlitePool, dict_pool: SqlitePool) -> Self {
+    pub fn new(pool: SqlitePool, mdx_dict: Arc<MdxFile>) -> Self {
         Self {
             word_cache_repo: WordCacheRepository::new(pool.clone()),
             query_record_repo: QueryRecordRepository::new(pool),
-            dict_repo: DictionaryRepository::new(dict_pool),
+            mdx_dict,
             http_client: reqwest::Client::new(),
         }
     }
@@ -63,45 +65,24 @@ impl TranslationService {
         let from = request.from.as_deref().unwrap_or("auto");
         let to = request.to.as_deref().unwrap_or("zh-CHS");
 
-        // 1. 尝试词典精确匹配
-        if let Ok(entries) = self.dict_repo.lookup_exact(text).await {
-            if let Some(entry) = entries.first() {
-                let query_type = if text.len() > 20 { "sentence" } else { "word" };
-                self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+        // 1. 尝试 MDX 词典精确匹配
+        if let Ok(Some(record)) = self.mdx_dict.lookup(text) {
+            let query_type = if text.len() > 20 { "sentence" } else { "word" };
+            self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
 
-                return Ok(TranslationResult {
-                    original_text: text.to_string(),
-                    data_source: "dictionary".to_string(),
-                    dictionary_result: Some(DictionaryResult {
-                        word: entry.word.clone(),
-                        definition: entry.definition.clone(),
-                    }),
-                    api_result: None,
-                    success: true,
-                });
-            }
+            return Ok(TranslationResult {
+                original_text: text.to_string(),
+                data_source: "dictionary".to_string(),
+                dictionary_result: Some(DictionaryResult {
+                    word: text.to_string(),
+                    definition: record.text,
+                }),
+                api_result: None,
+                success: true,
+            });
         }
 
-        // 2. 尝试词典模糊匹配
-        if let Ok(entries) = self.dict_repo.lookup_fuzzy(text).await {
-            if let Some(entry) = entries.first() {
-                let query_type = if text.len() > 20 { "sentence" } else { "word" };
-                self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
-
-                return Ok(TranslationResult {
-                    original_text: text.to_string(),
-                    data_source: "dictionary".to_string(),
-                    dictionary_result: Some(DictionaryResult {
-                        word: entry.word.clone(),
-                        definition: entry.definition.clone(),
-                    }),
-                    api_result: None,
-                    success: true,
-                });
-            }
-        }
-
-        // 3. 检查缓存
+        // 2. 检查缓存
         if let Some(cache) = self.word_cache_repo.find_by_word(text, from, to).await? {
             let explains = cache.explains.map(|e| serde_json::from_str(&e).unwrap_or_default());
 

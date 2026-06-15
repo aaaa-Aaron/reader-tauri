@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { bookService } from '../../services/bookService';
 import type { IBook } from '../../types/book';
 import styles from './Viewer.module.css';
-import './LongmanDictionaryOfContemporaryEnglish6thEnEn.css';
+import './OxfordDictionary.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TranslationPopup from './components/TranslationPopup';

@@ -10,6 +10,7 @@ pub mod utils;
 mod tests;
 
 use commands::AppState;
+use mdict_rs::MdxFile;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::sync::Arc;
 use tauri::Manager;
@@ -85,47 +86,19 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
     Ok(pool)
 }
 
-/// Initialize dictionary database (read-only)
-async fn init_dict_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<dyn std::error::Error>> {
-    let app_dir = app_handle.path().app_data_dir()?;
-    let dict_dir = app_dir.join("dict");
-    std::fs::create_dir_all(&dict_dir)?;
+/// Initialize Oxford dictionary from MDX file using mdict-rs
+async fn init_oxford_dict(_app_handle: &tauri::AppHandle) -> Result<Arc<MdxFile>, Box<dyn std::error::Error>> {
+    let dict_path = std::path::PathBuf::from("src-tauri/dict/牛津10英汉双解词典/牛津高阶第10版英汉双解V5_0.mdx");
     
-    let dict_dest = dict_dir.join("LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
-
-    // If dictionary DB doesn't exist in app data, try to copy from bundled resources
-    if !dict_dest.exists() {
-        // Try resource dir first
-        if let Ok(resource_dir) = app_handle.path().resource_dir() {
-            let bundled_dict = resource_dir.join("dict").join("LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
-            if bundled_dict.exists() {
-                std::fs::copy(&bundled_dict, &dict_dest)?;
-                println!("Dictionary DB copied from resource dir");
-            }
-        }
-        
-        // If still not found, try dev directory
-        if !dict_dest.exists() {
-            let dev_dict = std::path::PathBuf::from("dict/LongmanDictionaryOfContemporaryEnglish6thEnEn.db");
-            if dev_dict.exists() {
-                std::fs::copy(&dev_dict, &dict_dest)?;
-                println!("Dictionary DB copied from dev directory");
-            }
-        }
+    if !dict_path.exists() {
+        return Err(format!("Oxford dictionary MDX file not found at {:?}", dict_path).into());
     }
-
-    if !dict_dest.exists() {
-        return Err("Dictionary DB not found".into());
-    }
-
-    let dict_url = format!("sqlite:{}", dict_dest.to_str().unwrap());
     
-    let pool = SqlitePoolOptions::new()
-        .max_connections(2)
-        .connect(&dict_url)
-        .await?;
-
-    Ok(pool)
+    println!("Loading Oxford dictionary from {:?}", dict_path);
+    let mdx = MdxFile::open(&dict_path)?;
+    println!("Oxford dictionary loaded successfully");
+    
+    Ok(Arc::new(mdx))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -140,29 +113,32 @@ pub fn run() {
             let app_handle = app.handle().clone();
             
             tauri::async_runtime::block_on(async move {
-                match init_db(&app_handle).await {
-                    Ok(pool) => {
-                        // Initialize dictionary DB
-                        let dict_pool = match init_dict_db(&app_handle).await {
-                            Ok(dp) => {
-                                println!("Dictionary database initialized successfully");
-                                dp
-                            }
-                            Err(e) => {
-                                eprintln!("Failed to initialize dictionary DB (non-fatal): {}", e);
-                                // Use main pool as fallback (won't have mdx table but won't crash)
-                                pool.clone()
-                            }
-                        };
-
-                        let state = Arc::new(AppState { db_pool: pool, dict_pool });
-                        app_handle.manage(state);
-                        println!("Database initialized successfully");
-                    }
+                // Initialize main database
+                let pool = match init_db(&app_handle).await {
+                    Ok(pool) => pool,
                     Err(e) => {
                         eprintln!("Failed to initialize database: {}", e);
+                        return Err::<(), Box<dyn std::error::Error>>(e.into());
                     }
-                }
+                };
+
+                // Initialize Oxford MDX dictionary using mdict-rs
+                let mdx_dict = match init_oxford_dict(&app_handle).await {
+                    Ok(dict) => {
+                        println!("Oxford dictionary initialized successfully");
+                        dict
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to initialize Oxford dictionary: {}", e);
+                        return Err::<(), Box<dyn std::error::Error>>(e.into());
+                    }
+                };
+
+                let state = Arc::new(AppState { db_pool: pool, mdx_dict });
+                app_handle.manage(state);
+                println!("Database initialized successfully");
+                
+                Ok(())
             });
             
             Ok(())
