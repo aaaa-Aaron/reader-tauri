@@ -1,4 +1,7 @@
-use crate::dto::{DictionaryResult, TranslationRequest, TranslationResult, VocabularyItem, QueryDetailItem, StatisticsSummary, ApiTranslationResponse};
+use crate::dto::{
+    ApiTranslationResponse, DictionaryResult, QueryDetailItem, StatisticsSummary,
+    TranslationRequest, TranslationResult, VocabularyItem,
+};
 use crate::errors::Result;
 use crate::repositories::{BookRepository, QueryRecordRepository, WordCacheRepository};
 use mdict_rs::MdxFile;
@@ -25,8 +28,17 @@ impl BookService {
         self.repo.find_by_id(id).await
     }
 
-    pub async fn create_book(&self, title: &str, format: &str, path: &str, author: Option<&str>, file_size: Option<i64>) -> Result<crate::models::Book> {
-        self.repo.create(title, format, path, author, file_size).await
+    pub async fn create_book(
+        &self,
+        title: &str,
+        format: &str,
+        path: &str,
+        author: Option<&str>,
+        file_size: Option<i64>,
+    ) -> Result<crate::models::Book> {
+        self.repo
+            .create(title, format, path, author, file_size)
+            .await
     }
 
     pub async fn delete_book(&self, id: i64) -> Result<()> {
@@ -37,7 +49,13 @@ impl BookService {
         self.repo.search(query).await
     }
 
-    pub async fn update_book(&self, id: i64, title: Option<&str>, author: Option<&str>, file_size: Option<i64>) -> Result<crate::models::Book> {
+    pub async fn update_book(
+        &self,
+        id: i64,
+        title: Option<&str>,
+        author: Option<&str>,
+        file_size: Option<i64>,
+    ) -> Result<crate::models::Book> {
         self.repo.update(id, title, author, file_size).await
     }
 }
@@ -68,7 +86,7 @@ impl TranslationService {
         // 1. 尝试 MDX 词典精确匹配
         if let Ok(Some(record)) = self.mdx_dict.lookup(text) {
             let definition = record.text;
-            
+
             // 检查是否为链接引用 (@@@LINK=主词条)
             let final_definition = if definition.starts_with("@@@LINK=") {
                 let linked_word = definition.trim_start_matches("@@@LINK=").trim();
@@ -82,7 +100,17 @@ impl TranslationService {
             };
 
             let query_type = if text.len() > 20 { "sentence" } else { "word" };
-            self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+            self.query_record_repo
+                .create(
+                    text,
+                    from,
+                    to,
+                    request.book_id,
+                    request.context.as_deref(),
+                    query_type,
+                )
+                .await
+                .ok();
 
             return Ok(TranslationResult {
                 original_text: text.to_string(),
@@ -98,10 +126,22 @@ impl TranslationService {
 
         // 2. 检查缓存
         if let Some(cache) = self.word_cache_repo.find_by_word(text, from, to).await? {
-            let explains = cache.explains.map(|e| serde_json::from_str(&e).unwrap_or_default());
+            let explains = cache
+                .explains
+                .map(|e| serde_json::from_str(&e).unwrap_or_default());
 
             let query_type = if text.len() > 20 { "sentence" } else { "word" };
-            self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+            self.query_record_repo
+                .create(
+                    text,
+                    from,
+                    to,
+                    request.book_id,
+                    request.context.as_deref(),
+                    query_type,
+                )
+                .await
+                .ok();
 
             return Ok(TranslationResult {
                 original_text: text.to_string(),
@@ -124,12 +164,35 @@ impl TranslationService {
 
         // 缓存结果
         if let Ok(ref api_result) = result {
-            let explains_str = api_result.explains.as_ref().map(|e| serde_json::to_string(e).unwrap_or_default());
-            self.word_cache_repo.create(text, from, to, &api_result.translated, api_result.phonetic.as_deref(), explains_str.as_deref()).await.ok();
+            let explains_str = api_result
+                .explains
+                .as_ref()
+                .map(|e| serde_json::to_string(e).unwrap_or_default());
+            self.word_cache_repo
+                .create(
+                    text,
+                    from,
+                    to,
+                    &api_result.translated,
+                    api_result.phonetic.as_deref(),
+                    explains_str.as_deref(),
+                )
+                .await
+                .ok();
         }
 
         let query_type = if text.len() > 20 { "sentence" } else { "word" };
-        self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
+        self.query_record_repo
+            .create(
+                text,
+                from,
+                to,
+                request.book_id,
+                request.context.as_deref(),
+                query_type,
+            )
+            .await
+            .ok();
 
         match result {
             Ok(api_result) => Ok(TranslationResult {
@@ -149,12 +212,69 @@ impl TranslationService {
         }
     }
 
-    async fn call_translation_api(&self, text: &str, from: &str, to: &str) -> Result<ApiTranslationResponse> {
-        // TODO: 接入有道翻译API
-        // 当前为简化实现
+    async fn call_translation_api(
+        &self,
+        text: &str,
+        from: &str,
+        to: &str,
+    ) -> Result<ApiTranslationResponse> {
+        // 有道翻译API配置
+        // 请替换为您自己的有道API凭证，或设置环境变量 YOUDAO_APP_ID 和 YOUDAO_APP_SECRET
+        let app_id = std::env::var("YOUDAO_APP_ID").unwrap_or_else(|_| "your_app_id".to_string());
+        let app_secret =
+            std::env::var("YOUDAO_APP_SECRET").unwrap_or_else(|_| "your_app_secret".to_string());
+
+        let salt = uuid::Uuid::new_v4().to_string();
+        let curtime = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            .to_string();
+
+        // 签名: MD5(appid + q + salt + curtime + appsecret)
+        let sign_str = format!("{}{}{}{}{}", app_id, text, salt, curtime, app_secret);
+        let sign = format!("{:x}", md5::compute(sign_str.as_bytes()));
+
+        let params = [
+            ("q", text),
+            ("from", from),
+            ("to", to),
+            ("appKey", &app_id),
+            ("salt", &salt),
+            ("sign", &sign),
+            ("signType", "v2"),
+            ("curtime", &curtime),
+        ];
+
+        let response = self
+            .http_client
+            .post("https://openapi.youdao.com/api")
+            .form(&params)
+            .send()
+            .await?;
+
+        let json: serde_json::Value = response.json().await?;
+
+        // 解析有道API响应
+        if json["errorCode"].as_str() != Some("0") {
+            return Ok(ApiTranslationResponse {
+                original: text.to_string(),
+                translated: format!(
+                    "翻译失败: {}",
+                    json["errorCode"].as_str().unwrap_or("未知错误")
+                ),
+                source: from.to_string(),
+                target: to.to_string(),
+                phonetic: None,
+                explains: None,
+            });
+        }
+
+        let translation = json["translation"][0].as_str().unwrap_or(text);
+
         Ok(ApiTranslationResponse {
             original: text.to_string(),
-            translated: format!("[Translated] {}", text),
+            translated: translation.to_string(),
             source: from.to_string(),
             target: to.to_string(),
             phonetic: None,
@@ -183,18 +303,22 @@ impl StatisticsService {
 
     pub async fn get_vocabulary_list(&self) -> Result<Vec<VocabularyItem>> {
         let rows = self.query_repo.get_vocabulary_list().await?;
-        Ok(rows.into_iter().enumerate().map(|(i, (word, count, last_time))| VocabularyItem {
-            id: i as i64 + 1,
-            word,
-            lookup_count: count,
-            last_lookup_time: last_time,
-        }).collect())
+        Ok(rows
+            .into_iter()
+            .enumerate()
+            .map(|(i, (word, count, last_time))| VocabularyItem {
+                id: i as i64 + 1,
+                word,
+                lookup_count: count,
+                last_lookup_time: last_time,
+            })
+            .collect())
     }
 
     pub async fn get_query_details(&self, word: &str) -> Result<Vec<QueryDetailItem>> {
         let records = self.query_repo.get_query_details(word).await?;
         let mut result = Vec::new();
-        
+
         for record in records {
             let book_title = if let Some(book_id) = record.book_id {
                 self.book_repo.find_by_id(book_id).await?.map(|b| b.title)

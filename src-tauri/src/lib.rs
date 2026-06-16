@@ -16,21 +16,23 @@ use std::sync::Arc;
 use tauri::Manager;
 
 /// Initialize database
-async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<dyn std::error::Error>> {
+async fn init_db(
+    app_handle: &tauri::AppHandle,
+) -> Result<sqlx::SqlitePool, Box<dyn std::error::Error>> {
     let app_dir = app_handle.path().app_data_dir()?;
     std::fs::create_dir_all(&app_dir)?;
-    
+
     let db_path = app_dir.join("e_reader.db");
-    // let db_url = format!("sqlite:{}", db_path.to_str().unwrap());
-    let db_url = "C:/Users/Aaron/AppData/Roaming/com.aaron.e-reader-tauri/e_reader.db";
-    // println!("{}", db_url);
-    // println!("db_path{:?}",db_path);
-    
+    let db_url = format!("sqlite:{}", db_path.to_str().unwrap());
+    // let db_url = "C:/Users/Aaron/AppData/Roaming/com.aaron.e-reader-tauri/e_reader.db";
+    println!("{}", db_url);
+    println!("db_path{:?}", db_path);
+
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(db_url)
+        .connect(&db_url)
         .await?;
-    
+
     // Create tables
     sqlx::query(
         r#"
@@ -43,11 +45,11 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
             author TEXT,
             file_size INTEGER
         )
-        "#
+        "#,
     )
     .execute(&pool)
     .await?;
-    
+
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS query_records (
@@ -61,11 +63,11 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (book_id) REFERENCES books(id)
         )
-        "#
+        "#,
     )
     .execute(&pool)
     .await?;
-    
+
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS word_cache (
@@ -78,26 +80,30 @@ async fn init_db(app_handle: &tauri::AppHandle) -> Result<sqlx::SqlitePool, Box<
             explains TEXT,
             UNIQUE(word, source_language, target_language)
         )
-        "#
+        "#,
     )
     .execute(&pool)
     .await?;
-    
+
     Ok(pool)
 }
 
 /// Initialize Oxford dictionary from MDX file using mdict-rs
-async fn init_oxford_dict(_app_handle: &tauri::AppHandle) -> Result<Arc<MdxFile>, Box<dyn std::error::Error>> {
-    let dict_path = std::path::PathBuf::from("src-tauri/dict/牛津10英汉双解词典/牛津高阶第10版英汉双解V5_0.mdx");
-    
+async fn init_oxford_dict(
+    _app_handle: &tauri::AppHandle,
+) -> Result<Arc<MdxFile>, Box<dyn std::error::Error>> {
+    let dict_path = std::path::PathBuf::from(
+        "src-tauri/dict/牛津10英汉双解词典/牛津高阶第10版英汉双解V5_0.mdx",
+    );
+
     if !dict_path.exists() {
         return Err(format!("Oxford dictionary MDX file not found at {:?}", dict_path).into());
     }
-    
+
     println!("Loading Oxford dictionary from {:?}", dict_path);
     let mdx = MdxFile::open(&dict_path)?;
     println!("Oxford dictionary loaded successfully");
-    
+
     Ok(Arc::new(mdx))
 }
 
@@ -111,7 +117,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             let app_handle = app.handle().clone();
-            
+
             tauri::async_runtime::block_on(async move {
                 // Initialize main database
                 let pool = match init_db(&app_handle).await {
@@ -134,13 +140,16 @@ pub fn run() {
                     }
                 };
 
-                let state = Arc::new(AppState { db_pool: pool, mdx_dict });
+                let state = Arc::new(AppState {
+                    db_pool: pool,
+                    mdx_dict,
+                });
                 app_handle.manage(state);
                 println!("Database initialized successfully");
-                
+
                 Ok(())
             });
-            
+
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

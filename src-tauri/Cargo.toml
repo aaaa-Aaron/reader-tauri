@@ -44,6 +44,7 @@ mdict-rs = "0.1.1"
 # Crypto
 sha2 = "0.10"
 hex = "0.4"
+md5 = "0.7"
 
 # UUID
 uuid = { version = "1", features = ["v4", "serde"] }
