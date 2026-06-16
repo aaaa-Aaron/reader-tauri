@@ -63,18 +63,12 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
 
   return (
     <div className={`${styles.popup} ${selectedWord ? styles.visible : ''}`} id="translate-popup">
-      <div className={styles.header}>
-        <span>翻译结果</span>
-        <button className={styles.closeBtn} onClick={onClose}>
-          ×
-        </button>
-      </div>
+      <button className={styles.closeBtn} onClick={onClose}>
+        ×
+      </button>
       <div className={styles.content} id="translate-content">
-        {selectedWord && (
-          <div><strong>原文：</strong>{selectedWord}</div>
-        )}
         {isTranslating ? (
-          <div><strong>翻译：</strong>翻译中...</div>
+          <div className={styles.loading}>翻译中...</div>
         ) : translationResult ? (
           <>
             {translationResult.success ? (
@@ -83,37 +77,32 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
                   translationResult.dictionary_result && translationResult.dictionary_result.definition ? (
                     <div className="entry" dangerouslySetInnerHTML={{ __html: translationResult.dictionary_result.definition }} />
                   ) : (
-                    <div><strong>翻译：</strong>词典查询失败</div>
+                    <div className={styles.error}>词典查询失败</div>
                   )
                 ) : translationResult.data_source === DataSourceType.API && translationResult.api_result ? (
                   <>
-                    <div><strong>翻译：</strong>{translationResult.api_result.translated}</div>
+                    <div className={styles.translation}>{translationResult.api_result.translated}</div>
                     {translationResult.api_result.phonetic && (
-                      <div><strong>音标：</strong>{translationResult.api_result.phonetic}</div>
+                      <div className={styles.phonetic}>{translationResult.api_result.phonetic}</div>
                     )}
                     {translationResult.api_result.explains && translationResult.api_result.explains.length > 0 && (
-                      <div>
-                        <strong>解释：</strong>
-                        <ul>
-                          {translationResult.api_result.explains.map((explain, index) => (
-                            <li key={index}>{explain}</li>
-                          ))}
-                        </ul>
+                      <div className={styles.explains}>
+                        {translationResult.api_result.explains.map((explain, index) => (
+                          <div key={index} className={styles.explain}>{index + 1}. {explain}</div>
+                        ))}
                       </div>
                     )}
-                    <div><strong>源语言：</strong>{translationResult.api_result.source}</div>
-                    <div><strong>目标语言：</strong>{translationResult.api_result.target}</div>
                   </>
                 ) : (
-                  <div><strong>翻译：</strong>翻译失败</div>
+                  <div className={styles.error}>翻译失败</div>
                 )}
               </>
             ) : (
-              <div><strong>错误：</strong>翻译失败</div>
+              <div className={styles.error}>翻译失败</div>
             )}
           </>
         ) : (
-          <div><strong>翻译：</strong>等待翻译结果...</div>
+          <div className={styles.loading}>等待翻译结果...</div>
         )}
       </div>
     </div>

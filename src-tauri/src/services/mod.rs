@@ -67,6 +67,20 @@ impl TranslationService {
 
         // 1. 尝试 MDX 词典精确匹配
         if let Ok(Some(record)) = self.mdx_dict.lookup(text) {
+            let definition = record.text;
+            
+            // 检查是否为链接引用 (@@@LINK=主词条)
+            let final_definition = if definition.starts_with("@@@LINK=") {
+                let linked_word = definition.trim_start_matches("@@@LINK=").trim();
+                if let Ok(Some(linked_record)) = self.mdx_dict.lookup(linked_word) {
+                    linked_record.text
+                } else {
+                    definition // 如果链接查询失败，返回原始链接文本
+                }
+            } else {
+                definition
+            };
+
             let query_type = if text.len() > 20 { "sentence" } else { "word" };
             self.query_record_repo.create(text, from, to, request.book_id, request.context.as_deref(), query_type).await.ok();
 
@@ -75,7 +89,7 @@ impl TranslationService {
                 data_source: "dictionary".to_string(),
                 dictionary_result: Some(DictionaryResult {
                     word: text.to_string(),
-                    definition: record.text,
+                    definition: final_definition,
                 }),
                 api_result: None,
                 success: true,
