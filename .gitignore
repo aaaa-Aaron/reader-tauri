@@ -30,3 +30,9 @@ Cargo.lock
 # Tauri
 *.db
 *.db-journal
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+src-tauri/.env
