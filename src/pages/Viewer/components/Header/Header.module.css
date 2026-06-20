@@ -114,6 +114,27 @@
     color: #333;
 }
 
+.chatBtn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: transparent;
+    border-radius: var(--mdn-radius);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: #666;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    outline: none;
+}
+
+.chatBtn:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+    color: #1890ff;
+}
+
 .settings {
     position: relative;
 }

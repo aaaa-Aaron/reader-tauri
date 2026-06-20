@@ -5,11 +5,13 @@ import styles from './Header.module.css';
 interface HeaderProps {
   showSidebarLeft: boolean;
   onToggleSidebar: () => void;
+  onToggleChat?: () => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
   showSidebarLeft,
-  onToggleSidebar
+  onToggleSidebar,
+  onToggleChat
 }) => {
   return (
     <div className={styles.headerWrapper}>
@@ -37,6 +39,17 @@ const Header: React.FC<HeaderProps> = ({
               </svg>
             </button>
           </div>
+          {onToggleChat && (
+            <button
+              className={styles.chatBtn}
+              onClick={onToggleChat}
+              title="与AI探讨书籍"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+          )}
           <div className={styles.settings}>
             <button className={styles.settingsBtn}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

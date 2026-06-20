@@ -1,4 +1,4 @@
-import ePub, { Book, NavItem, Rendition } from 'epubjs';
+import { Book, NavItem } from 'epubjs';
 
 
 async function extractSentenceByCfiRange(book: Book, cfiRange: string): Promise<{ text: string, sentence: string }> {

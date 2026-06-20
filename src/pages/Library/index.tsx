@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { bookService } from '../../services/bookService';
 import { fileService } from '../../services/fileService';
-import type { Book } from '../../types/book';
+import type { IBook } from '../../types/book';
 import styles from './Library.module.css';
 
 const Library: React.FC = () => {
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<IBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -32,11 +32,11 @@ const Library: React.FC = () => {
       if (!filePath) return;
 
       setUploading(true);
-      
+
       // Extract file info
       const fileName = filePath.split(/[/\\]/).pop() || '';
       const ext = fileName.split('.').pop()?.toLowerCase();
-      
+
       if (ext !== 'pdf' && ext !== 'epub') {
         alert('Only PDF and EPUB files are supported');
         return;
@@ -47,7 +47,7 @@ const Library: React.FC = () => {
 
       // Copy file to app data
       const destPath = await fileService.copyToAppData(filePath, fileName);
-      
+
       // Create book record
       const newBook = await bookService.createBook({
         title: fileName.replace(/\.[^/.]+$/, ''),
@@ -75,8 +75,8 @@ const Library: React.FC = () => {
         <h1>My Library</h1>
         <div className={styles.controls}>
           <Link to="/statistics" className={styles.link}>Statistics</Link>
-          <button 
-            className={styles.uploadBtn} 
+          <button
+            className={styles.uploadBtn}
             onClick={handleUpload}
             disabled={uploading}
           >
@@ -94,8 +94,8 @@ const Library: React.FC = () => {
         ) : (
           <div className={styles.grid}>
             {books.map(book => (
-              <Link 
-                key={book.id} 
+              <Link
+                key={book.id}
                 to={`/viewer/${book.id}`}
                 className={styles.card}
               >

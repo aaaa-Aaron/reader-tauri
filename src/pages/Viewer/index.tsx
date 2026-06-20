@@ -7,6 +7,7 @@ import './OxfordDictionary.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TranslationPopup from './components/TranslationPopup';
+import ChatDialog from './components/ChatDialog';
 import { useEpubReader } from '../../hooks/useEpubReader';
 
 const Viewer: React.FC = () => {
@@ -19,6 +20,7 @@ const Viewer: React.FC = () => {
   const [showSidebarLeft, setShowSidebarLeft] = useState(true);
   const [selectedWord, setSelectedWord] = useState('');
   const [selectedContext, setSelectedContext] = useState('');
+  const [showChat, setShowChat] = useState(false);
 
   const handleTextSelected = useCallback((word: string, context: string) => {
     setSelectedWord(word);
@@ -88,6 +90,7 @@ const Viewer: React.FC = () => {
       <Header
         showSidebarLeft={showSidebarLeft}
         onToggleSidebar={handleToggleSidebar}
+        onToggleChat={() => setShowChat(prev => !prev)}
       />
 
       <div className={styles.mainContent}>
@@ -113,6 +116,12 @@ const Viewer: React.FC = () => {
         bookId={book.id}
         onClose={handleClosePopup}
         onTranslatingChange={handleTranslationChange}
+      />
+
+      <ChatDialog
+        open={showChat}
+        bookTitle={book.title}
+        onClose={() => setShowChat(false)}
       />
     </div>
   );
