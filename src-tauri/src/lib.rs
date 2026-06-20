@@ -118,7 +118,7 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
 
-            tauri::async_runtime::block_on(async move {
+            let _ = tauri::async_runtime::block_on(async move {
                 // Initialize main database
                 let pool = match init_db(&app_handle).await {
                     Ok(pool) => pool,
