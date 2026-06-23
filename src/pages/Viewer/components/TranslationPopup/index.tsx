@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { DataSourceType } from '../../../../types/translation';
-import type { TranslationResult, TranslationRequest } from '../../../../types/translation';
-import { translationService } from '../../../../services/translationService';
+import { translationService } from '../../../../entities/translation';
+import type { TranslationResult } from '../../../../entities/translation';
 import styles from './TranslationPopup.module.css';
+
+// 翻译数据源类型
+enum DataSourceType {
+  DICTIONARY = 'dictionary',
+  API = 'api'
+}
+
+interface TranslationRequest {
+  text: string;
+  from?: string;
+  to?: string;
+  bookId?: number;
+  context?: string;
+}
 
 interface TranslationPopupProps {
   selectedWord: string;
@@ -48,6 +61,7 @@ const TranslationPopup: React.FC<TranslationPopupProps> = ({
       } catch (error) {
         console.error('翻译失败:', error);
         setTranslationResult({
+          word: selectedWord,
           original_text: selectedWord,
           data_source: DataSourceType.API,
           success: false,

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
-import { bookService } from '../../services/bookService';
-import type { IBook } from '../../types/book';
+import { bookService } from '../../entities/book';
+import type { IBook } from '../../entities/book';
 import styles from './Viewer.module.css';
 import './OxfordDictionary.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TranslationPopup from './components/TranslationPopup';
 import BookmarksPanel from './components/BookmarksPanel';
-import { useEpubReader } from '../../hooks/useEpubReader';
+import { useEpubReader } from '../../shared/hooks/useEpubReader';
 
 const Viewer: React.FC = () => {
   const { id } = useParams();
@@ -110,7 +110,7 @@ const Viewer: React.FC = () => {
         </main>
 
         <BookmarksPanel
-          showSidebarRight={showBookmarks}
+          isVisible={showBookmarks}
           onClose={() => setShowBookmarks(false)}
         />
       </div>

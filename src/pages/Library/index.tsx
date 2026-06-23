@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { bookService } from '../../services/bookService';
-import { fileService } from '../../services/fileService';
-import type { IBook } from '../../types/book';
+import { bookService } from '../../entities/book';
+import type { IBook } from '../../entities/book';
+import { fileService } from '../../shared/utils/fileService';
 import styles from './Library.module.css';
 
 const Library: React.FC = () => {
@@ -100,10 +100,10 @@ const Library: React.FC = () => {
                 className={styles.card}
               >
                 <div className={styles.icon}>
-                  {book.format === 'pdf' ? '📄' : '📖'}
+                  {book.format === 'pdf' || book.fileType === 'pdf' ? '📄' : '📖'}
                 </div>
                 <h3 className={styles.title}>{book.title}</h3>
-                <p className={styles.meta}>{book.format.toUpperCase()}</p>
+                <p className={styles.meta}>{(book.format || book.fileType || '').toUpperCase()}</p>
               </Link>
             ))}
           </div>

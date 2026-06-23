@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { statisticsService } from '../../services/statisticsService';
-import type { VocabularyItem, StatisticsSummary } from '../../types/statistics';
+import { statisticsService } from '../../entities/statistics';
+import type { VocabularyItem, StatisticsSummary } from '../../entities/statistics';
 import styles from './Statistics.module.css';
 
 const Statistics: React.FC = () => {
@@ -80,7 +80,7 @@ const Statistics: React.FC = () => {
                   <tr key={item.id}>
                     <td>{item.word}</td>
                     <td>{item.lookupCount}</td>
-                    <td>{new Date(item.lastLookupTime).toLocaleDateString()}</td>
+                    <td>{item.lastLookupTime ? new Date(item.lastLookupTime).toLocaleDateString() : item.lastQueryAt ? new Date(item.lastQueryAt).toLocaleDateString() : '-'}</td>
                   </tr>
                 ))}
               </tbody>
