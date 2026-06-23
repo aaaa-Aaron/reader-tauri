@@ -1,0 +1,314 @@
+.sidebar {
+  width: 320px;
+  background-color: var(--mdn-surface);
+  border-left: 1px solid var(--mdn-border);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* 头部 */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 16px;
+}
+
+.tabs {
+  display: flex;
+  gap: 24px;
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--mdn-text-secondary);
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  color: var(--mdn-text-primary);
+}
+
+.tab.active {
+  color: var(--mdn-text-primary);
+  border-bottom-color: var(--mdn-text-primary);
+  font-weight: 500;
+}
+
+.closeBtn {
+  background: transparent;
+  border: none;
+  color: var(--mdn-text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+  line-height: 1;
+}
+
+.closeBtn:hover {
+  background-color: var(--mdn-background);
+  color: var(--mdn-text-primary);
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px 20px;
+}
+
+/* 书签列表样式 */
+.bookmarkList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bookmarkItem {
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 8px;
+}
+
+.bookmarkItem:hover {
+  background-color: var(--mdn-background);
+}
+
+.bookmarkHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--mdn-background);
+  color: var(--mdn-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--mdn-border);
+}
+
+.userName {
+  font-size: 13px;
+  color: var(--mdn-text-secondary);
+}
+
+.time {
+  font-size: 12px;
+  color: var(--mdn-text-secondary);
+}
+
+.bookmarkPosition {
+  font-size: 12px;
+  color: var(--mdn-text-secondary);
+  margin-bottom: 8px;
+}
+
+.bookmarkContent {
+  font-size: 14px;
+  color: var(--mdn-text-primary);
+  line-height: 1.6;
+}
+
+.bookmarkActions {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bookmarkItem:hover .bookmarkActions {
+  opacity: 1;
+}
+
+.actionBtn {
+  background: transparent;
+  border: none;
+  color: var(--mdn-text-secondary);
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.actionBtn:hover {
+  background-color: var(--mdn-background);
+  color: var(--mdn-text-primary);
+}
+
+.addBookmarkBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--mdn-text-secondary);
+  font-size: 13px;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 8px;
+  border-radius: 8px;
+}
+
+.addBookmarkBtn:hover {
+  background-color: var(--mdn-background);
+  color: var(--mdn-text-primary);
+}
+
+/* 评论列表样式 */
+.commentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.commentItem {
+  padding: 16px 0;
+}
+
+.commentItem + .commentItem {
+  border-top: 1px solid var(--mdn-border);
+}
+
+.commentContent {
+  font-size: 14px;
+  color: var(--mdn-text-primary);
+  line-height: 1.6;
+  margin: 12px 0;
+}
+
+.replies {
+  margin-left: 36px;
+  margin-top: 12px;
+}
+
+.replyItem {
+  padding: 12px 0;
+}
+
+.replyItem + .replyItem {
+  border-top: 1px solid var(--mdn-border);
+}
+
+.replyContent {
+  font-size: 13px;
+  color: var(--mdn-text-primary);
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+.commentActions {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.commentItem:hover .commentActions {
+  opacity: 1;
+}
+
+/* 输入区域 */
+.inputArea {
+  display: flex;
+  gap: 8px;
+  padding: 16px 20px;
+  background-color: var(--mdn-surface);
+}
+
+.input {
+  flex: 1;
+  border-radius: 8px;
+  resize: none;
+  font-size: 14px;
+}
+
+.sendBtn {
+  background-color: var(--mdn-text-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sendBtn:hover {
+  opacity: 0.8;
+}
+
+/* 滚动条样式 */
+.content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: var(--mdn-border);
+  border-radius: 2px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--mdn-accent);
+}
+
+@media (max-width: 1200px) {
+  .sidebar {
+    width: 280px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    right: -320px;
+    top: 60px;
+    height: calc(100vh - 60px);
+    z-index: 1000;
+    box-shadow: var(--mdn-shadow-heavy);
+  }
+
+  .sidebar.open {
+    right: 0;
+  }
+}

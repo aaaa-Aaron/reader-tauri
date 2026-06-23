@@ -114,7 +114,7 @@
     color: #333;
 }
 
-.chatBtn {
+.bookmarkBtn {
     width: 32px;
     height: 32px;
     border: none;
@@ -130,9 +130,9 @@
     outline: none;
 }
 
-.chatBtn:hover {
+.bookmarkBtn:hover {
     background-color: rgba(0, 0, 0, 0.05);
-    color: #1890ff;
+    color: #faad14;
 }
 
 .settings {

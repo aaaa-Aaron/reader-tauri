@@ -7,7 +7,7 @@ import './OxfordDictionary.css';
 import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import TranslationPopup from './components/TranslationPopup';
-import ChatDialog from './components/ChatDialog';
+import BookmarksPanel from './components/BookmarksPanel';
 import { useEpubReader } from '../../hooks/useEpubReader';
 
 const Viewer: React.FC = () => {
@@ -20,7 +20,7 @@ const Viewer: React.FC = () => {
   const [showSidebarLeft, setShowSidebarLeft] = useState(true);
   const [selectedWord, setSelectedWord] = useState('');
   const [selectedContext, setSelectedContext] = useState('');
-  const [showChat, setShowChat] = useState(false);
+  const [showBookmarks, setShowBookmarks] = useState(false);
 
   const handleTextSelected = useCallback((word: string, context: string) => {
     setSelectedWord(word);
@@ -90,10 +90,10 @@ const Viewer: React.FC = () => {
       <Header
         showSidebarLeft={showSidebarLeft}
         onToggleSidebar={handleToggleSidebar}
-        onToggleChat={() => setShowChat(prev => !prev)}
+        onToggleBookmarks={() => setShowBookmarks(prev => !prev)}
       />
 
-      <div className={styles.mainContent}>
+      <div className={`${styles.mainContent} ${showBookmarks ? styles.withBookmarks : ''}`}>
         <Sidebar
           outline={outline}
           showSidebarLeft={showSidebarLeft}
@@ -108,6 +108,11 @@ const Viewer: React.FC = () => {
             </div>
           </div>
         </main>
+
+        <BookmarksPanel
+          showSidebarRight={showBookmarks}
+          onClose={() => setShowBookmarks(false)}
+        />
       </div>
 
       <TranslationPopup
@@ -116,12 +121,6 @@ const Viewer: React.FC = () => {
         bookId={book.id}
         onClose={handleClosePopup}
         onTranslatingChange={handleTranslationChange}
-      />
-
-      <ChatDialog
-        open={showChat}
-        bookTitle={book.title}
-        onClose={() => setShowChat(false)}
       />
     </div>
   );

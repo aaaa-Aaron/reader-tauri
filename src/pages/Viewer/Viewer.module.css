@@ -51,6 +51,11 @@ body {
   transition: transform 0.3s ease;
 }
 
+/* 当书签栏显示时，epubMain 自适应调整宽度 */
+.mainContent.withBookmarks .epubMain {
+  /* flex: 1 会自动填充剩余空间 */
+}
+
 /* EPUB main area */
 .epubMain {
   flex: 1;
