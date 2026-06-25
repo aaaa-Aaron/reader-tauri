@@ -51,7 +51,7 @@ const Viewer: React.FC = () => {
     }
   }, [annotations]);
 
-  const { outline, prev, next, goTo, addAnnotationMarker, removeAnnotationMarker } = useEpubReader({
+  const { outline, prev, next, goTo, addAnnotationMarker, removeAnnotationMarker, isReady } = useEpubReader({
     containerRef,
     bookPath: book?.path ?? null,
     onTextSelected: handleTextSelected,
@@ -77,14 +77,15 @@ const Viewer: React.FC = () => {
     return () => setBook(null);
   }, [id]);
 
+  // 当 rendition 就绪或 annotations 变化时，添加注解标记
   useEffect(() => {
-    if (!book) return;
+    if (!book || !isReady) return;
     annotations.forEach(annotation => {
       if (annotation.cfi) {
         addAnnotationMarker(annotation.cfi, annotation.id);
       }
     });
-  }, [annotations, addAnnotationMarker]);
+  }, [annotations, addAnnotationMarker, isReady]);
 
   useEffect(() => {
     if (!translationEnabled && persistedSelection.cfi && persistedSelection.word) {

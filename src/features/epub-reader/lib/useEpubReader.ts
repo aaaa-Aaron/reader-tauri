@@ -17,6 +17,7 @@ interface UseEpubReaderReturn {
     goTo: (dest: string) => void;
     addAnnotationMarker: (cfi: string, id: number) => void;
     removeAnnotationMarker: (cfi: string) => void;
+    isReady: boolean;
 }
 
 export function useEpubReader({
@@ -158,7 +159,8 @@ export function useEpubReader({
             const markerId = `annotation-${id}`;
             const data = { annotationId: id };
 
-            renditionRef.current.annotations.underline(
+            renditionRef.current.annotations.add(
+                'underline',
                 cfi,
                 data,
                 () => {
@@ -167,8 +169,10 @@ export function useEpubReader({
                 markerId,
                 {
                     stroke: '#1890ff',
-                    'stroke-opacity': '1',
-                    'stroke-width': '2'
+                    'stroke-opacity': '0.8',
+                    'stroke-width': '2',
+                    fill: 'none',
+                    'fill-opacity': '0'
                 }
             );
 
@@ -213,6 +217,7 @@ export function useEpubReader({
         next,
         goTo,
         addAnnotationMarker,
-        removeAnnotationMarker
+        removeAnnotationMarker,
+        isReady: isDisplayed
     };
 }
