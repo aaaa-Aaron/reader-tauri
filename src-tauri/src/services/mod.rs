@@ -3,7 +3,9 @@ use crate::dto::{
     TranslationRequest, TranslationResult, VocabularyItem,
 };
 use crate::errors::Result;
-use crate::repositories::{BookRepository, QueryRecordRepository, WordCacheRepository};
+use crate::repositories::{
+    AnnotationRepository, BookRepository, QueryRecordRepository, WordCacheRepository,
+};
 use mdict_rs::MdxFile;
 use sqlx::SqlitePool;
 use std::sync::Arc;
@@ -346,5 +348,52 @@ impl StatisticsService {
             most_looked_up_word: most_looked_up.unwrap_or_default(),
             average_lookups_per_word: avg,
         })
+    }
+}
+
+/// 注解服务
+pub struct AnnotationService {
+    repo: AnnotationRepository,
+}
+
+impl AnnotationService {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self {
+            repo: AnnotationRepository::new(pool),
+        }
+    }
+
+    pub async fn get_annotations(&self, book_id: i64) -> Result<Vec<crate::models::Annotation>> {
+        self.repo.find_by_book_id(book_id).await
+    }
+
+    pub async fn create_annotation(
+        &self,
+        book_id: i64,
+        content: &str,
+        position: &str,
+        cfi: Option<&str>,
+    ) -> Result<crate::models::Annotation> {
+        self.repo.create(book_id, content, position, cfi).await
+    }
+
+    pub async fn delete_annotation(&self, id: i64) -> Result<()> {
+        self.repo.delete(id).await
+    }
+
+    pub async fn get_annotations_by_cfi(
+        &self,
+        book_id: i64,
+        cfi: &str,
+    ) -> Result<Vec<crate::models::Annotation>> {
+        self.repo.find_by_cfi(book_id, cfi).await
+    }
+
+    pub async fn update_annotation(
+        &self,
+        id: i64,
+        content: &str,
+    ) -> Result<crate::models::Annotation> {
+        self.repo.update_content(id, content).await
     }
 }

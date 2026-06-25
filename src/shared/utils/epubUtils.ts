@@ -3,6 +3,7 @@ import { Book, NavItem } from 'epubjs';
 
 async function extractSentenceByCfiRange(book: Book, cfiRange: string): Promise<{ text: string, sentence: string }> {
     const range = await book.getRange(cfiRange);
+    if (!range) return { text: '', sentence: '' };
     const text = range.toString().trim();
     if (!text) return { text: '', sentence: '' };
 

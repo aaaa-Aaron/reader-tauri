@@ -1,0 +1,149 @@
+.annotationTest {
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+  padding: 12px;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  flex-shrink: 0;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  overflow-y: auto;
+  gap: 8px;
+}
+
+.controls h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.controlGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.controlGroup label {
+  font-weight: 500;
+  font-size: 12px;
+  width: 100%;
+}
+
+.controlGroup button {
+  padding: 4px 10px;
+  background: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.controlGroup button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.controlGroup button:hover:not(:disabled) {
+  background: #40a9ff;
+}
+
+.noteInput {
+  width: 100%;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  min-height: 50px;
+  resize: vertical;
+  font-size: 12px;
+  box-sizing: border-box;
+}
+
+.bookmarksList {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #ddd;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.bookmarksList h3 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+}
+
+.bookmarksList ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bookmarksList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px;
+  background: white;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.bookmarksList li button {
+  padding: 2px 6px;
+  background: #ff4d4f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.viewerContainer {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.selectedNote {
+  padding: 10px;
+  background: #e6f7ff;
+  border-radius: 6px;
+  border: 1px solid #91d5ff;
+  font-size: 12px;
+}
+
+.selectedNote h3 {
+  margin: 0 0 6px 0;
+  font-size: 13px;
+  color: #1890ff;
+}
+
+.selectedNote p {
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.selectedNote button {
+  padding: 2px 8px;
+  background: #fff;
+  color: #1890ff;
+  border: 1px solid #1890ff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.selectedNote button:hover {
+  background: #1890ff;
+  color: #fff;
+}

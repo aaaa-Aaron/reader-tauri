@@ -1,5 +1,5 @@
 use crate::errors::Result;
-use crate::models::{Book, DictionaryEntry, QueryRecord, WordCache};
+use crate::models::{Annotation, Book, DictionaryEntry, QueryRecord, WordCache};
 use sqlx::SqlitePool;
 
 /// 图书仓储
@@ -18,7 +18,7 @@ impl BookRepository {
             SELECT id, title, format, path, upload_time, author, file_size
             FROM books
             ORDER BY upload_time DESC
-            "#
+            "#,
         )
         .fetch_all(&self.pool)
         .await?;
@@ -31,7 +31,7 @@ impl BookRepository {
             SELECT id, title, format, path, upload_time, author, file_size
             FROM books
             WHERE id = ?
-            "#
+            "#,
         )
         .bind(id)
         .fetch_optional(&self.pool)
@@ -39,13 +39,20 @@ impl BookRepository {
         Ok(book)
     }
 
-    pub async fn create(&self, title: &str, format: &str, path: &str, author: Option<&str>, file_size: Option<i64>) -> Result<Book> {
+    pub async fn create(
+        &self,
+        title: &str,
+        format: &str,
+        path: &str,
+        author: Option<&str>,
+        file_size: Option<i64>,
+    ) -> Result<Book> {
         let id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO books (title, format, path, author, file_size, upload_time)
             VALUES (?, ?, ?, ?, ?, datetime('now'))
             RETURNING id
-            "#
+            "#,
         )
         .bind(title)
         .bind(format)
@@ -55,7 +62,9 @@ impl BookRepository {
         .fetch_one(&self.pool)
         .await?;
 
-        self.find_by_id(id).await?.ok_or_else(|| crate::errors::AppError::Unknown("Failed to create book".to_string()))
+        self.find_by_id(id)
+            .await?
+            .ok_or_else(|| crate::errors::AppError::Unknown("Failed to create book".to_string()))
     }
 
     pub async fn delete(&self, id: i64) -> Result<()> {
@@ -74,7 +83,7 @@ impl BookRepository {
             FROM books
             WHERE title LIKE ?
             ORDER BY upload_time DESC
-            "#
+            "#,
         )
         .bind(pattern)
         .fetch_all(&self.pool)
@@ -82,7 +91,13 @@ impl BookRepository {
         Ok(books)
     }
 
-    pub async fn update(&self, id: i64, title: Option<&str>, author: Option<&str>, file_size: Option<i64>) -> Result<Book> {
+    pub async fn update(
+        &self,
+        id: i64,
+        title: Option<&str>,
+        author: Option<&str>,
+        file_size: Option<i64>,
+    ) -> Result<Book> {
         let book = self.find_by_id(id).await?.ok_or_else(|| {
             crate::errors::AppError::Unknown(format!("Book with id {} not found", id))
         })?;
@@ -96,7 +111,7 @@ impl BookRepository {
             UPDATE books
             SET title = ?, author = ?, file_size = ?
             WHERE id = ?
-            "#
+            "#,
         )
         .bind(new_title)
         .bind(new_author)
@@ -105,9 +120,9 @@ impl BookRepository {
         .execute(&self.pool)
         .await?;
 
-        self.find_by_id(id).await?.ok_or_else(|| {
-            crate::errors::AppError::Unknown("Failed to update book".to_string())
-        })
+        self.find_by_id(id)
+            .await?
+            .ok_or_else(|| crate::errors::AppError::Unknown("Failed to update book".to_string()))
     }
 }
 
@@ -121,7 +136,15 @@ impl QueryRecordRepository {
         Self { pool }
     }
 
-    pub async fn create(&self, original_text: &str, source_language: &str, target_language: &str, book_id: Option<i64>, context: Option<&str>, query_type: &str) -> Result<()> {
+    pub async fn create(
+        &self,
+        original_text: &str,
+        source_language: &str,
+        target_language: &str,
+        book_id: Option<i64>,
+        context: Option<&str>,
+        query_type: &str,
+    ) -> Result<()> {
         sqlx::query(
             r#"
             INSERT INTO query_records (original_text, source_language, target_language, book_id, context, query_type, created_at)
@@ -146,7 +169,7 @@ impl QueryRecordRepository {
             FROM query_records
             GROUP BY original_text
             ORDER BY count DESC
-            "#
+            "#,
         )
         .fetch_all(&self.pool)
         .await?;
@@ -174,9 +197,10 @@ impl QueryRecordRepository {
             .fetch_one(&self.pool)
             .await?;
 
-        let unique: i64 = sqlx::query_scalar("SELECT COUNT(DISTINCT original_text) FROM query_records")
-            .fetch_one(&self.pool)
-            .await?;
+        let unique: i64 =
+            sqlx::query_scalar("SELECT COUNT(DISTINCT original_text) FROM query_records")
+                .fetch_one(&self.pool)
+                .await?;
 
         let most_looked_up: Option<String> = sqlx::query_scalar(
             r#"
@@ -185,7 +209,7 @@ impl QueryRecordRepository {
             GROUP BY original_text
             ORDER BY COUNT(*) DESC
             LIMIT 1
-            "#
+            "#,
         )
         .fetch_optional(&self.pool)
         .await?;
@@ -210,13 +234,18 @@ impl WordCacheRepository {
         Self { pool }
     }
 
-    pub async fn find_by_word(&self, word: &str, source_language: &str, target_language: &str) -> Result<Option<WordCache>> {
+    pub async fn find_by_word(
+        &self,
+        word: &str,
+        source_language: &str,
+        target_language: &str,
+    ) -> Result<Option<WordCache>> {
         let cache = sqlx::query_as::<_, WordCache>(
             r#"
             SELECT id, word, source_language, target_language, translated, phonetic, explains
             FROM word_cache
             WHERE word = ? AND source_language = ? AND target_language = ?
-            "#
+            "#,
         )
         .bind(word)
         .bind(source_language)
@@ -226,7 +255,15 @@ impl WordCacheRepository {
         Ok(cache)
     }
 
-    pub async fn create(&self, word: &str, source_language: &str, target_language: &str, translated: &str, phonetic: Option<&str>, explains: Option<&str>) -> Result<()> {
+    pub async fn create(
+        &self,
+        word: &str,
+        source_language: &str,
+        target_language: &str,
+        translated: &str,
+        phonetic: Option<&str>,
+        explains: Option<&str>,
+    ) -> Result<()> {
         sqlx::query(
             r#"
             INSERT INTO word_cache (word, source_language, target_language, translated, phonetic, explains)
@@ -262,7 +299,7 @@ impl DictionaryRepository {
     /// 精确匹配查词
     pub async fn lookup_exact(&self, word: &str) -> Result<Vec<DictionaryEntry>> {
         let entries = sqlx::query_as::<_, DictionaryEntry>(
-            "SELECT entry as word, paraphrase as definition FROM mdx WHERE LOWER(entry) = LOWER(?)"
+            "SELECT entry as word, paraphrase as definition FROM mdx WHERE LOWER(entry) = LOWER(?)",
         )
         .bind(word.to_lowercase())
         .fetch_all(&self.pool)
@@ -280,5 +317,111 @@ impl DictionaryRepository {
         .fetch_all(&self.pool)
         .await?;
         Ok(entries)
+    }
+}
+
+/// 注解仓储
+pub struct AnnotationRepository {
+    pool: SqlitePool,
+}
+
+impl AnnotationRepository {
+    pub fn new(pool: SqlitePool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn find_by_book_id(&self, book_id: i64) -> Result<Vec<Annotation>> {
+        let annotations = sqlx::query_as::<_, Annotation>(
+            r#"
+            SELECT id, book_id, content, position, cfi, created_at
+            FROM bookmarks
+            WHERE book_id = ?
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(book_id)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(annotations)
+    }
+
+    pub async fn create(
+        &self,
+        book_id: i64,
+        content: &str,
+        position: &str,
+        cfi: Option<&str>,
+    ) -> Result<Annotation> {
+        let id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO bookmarks (book_id, content, position, cfi, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+            RETURNING id
+            "#,
+        )
+        .bind(book_id)
+        .bind(content)
+        .bind(position)
+        .bind(cfi)
+        .fetch_one(&self.pool)
+        .await?;
+
+        let annotation = sqlx::query_as::<_, Annotation>(
+            r#"
+            SELECT id, book_id, content, position, cfi, created_at
+            FROM bookmarks
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(annotation)
+    }
+
+    pub async fn delete(&self, id: i64) -> Result<()> {
+        sqlx::query("DELETE FROM bookmarks WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn find_by_cfi(&self, book_id: i64, cfi: &str) -> Result<Vec<Annotation>> {
+        let annotations = sqlx::query_as::<_, Annotation>(
+            r#"
+            SELECT id, book_id, content, position, cfi, created_at
+            FROM bookmarks
+            WHERE book_id = ? AND cfi = ?
+            ORDER BY created_at DESC
+            "#,
+        )
+        .bind(book_id)
+        .bind(cfi)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(annotations)
+    }
+
+    pub async fn update_content(&self, id: i64, content: &str) -> Result<Annotation> {
+        sqlx::query("UPDATE bookmarks SET content = ? WHERE id = ?")
+            .bind(content)
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+
+        let annotation = sqlx::query_as::<_, Annotation>(
+            r#"
+            SELECT id, book_id, content, position, cfi, created_at
+            FROM bookmarks
+            WHERE id = ?
+            "#,
+        )
+        .bind(id)
+        .fetch_one(&self.pool)
+        .await?;
+
+        Ok(annotation)
     }
 }

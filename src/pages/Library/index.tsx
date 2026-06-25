@@ -75,6 +75,7 @@ const Library: React.FC = () => {
         <h1>My Library</h1>
         <div className={styles.controls}>
           <Link to="/statistics" className={styles.link}>Statistics</Link>
+          <Link to="/annotation-test" className={styles.link}>Annotation Test</Link>
           <button
             className={styles.uploadBtn}
             onClick={handleUpload}

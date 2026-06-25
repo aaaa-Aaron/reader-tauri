@@ -45,3 +45,15 @@ pub struct DictionaryEntry {
     pub word: String,
     pub definition: String,
 }
+
+/// 注解实体
+#[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct Annotation {
+    pub id: i64,
+    pub book_id: i64,
+    pub content: String,
+    pub position: String,
+    pub cfi: Option<String>,
+    pub created_at: DateTime<Utc>,
+}

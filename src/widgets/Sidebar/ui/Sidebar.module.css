@@ -1,0 +1,90 @@
+.sidebar {
+  width: 280px;
+  background: #fff;
+  border-right: 1px solid #eee;
+  overflow-y: auto;
+  transition: width 0.3s, opacity 0.3s;
+}
+
+.sidebar.hidden {
+  width: 0;
+  opacity: 0;
+  overflow: hidden;
+  border-right: none;
+}
+
+.tocNav {
+  padding: 16px 0;
+}
+
+.tocList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.tocItem {
+  padding: 0;
+}
+
+.tocItem button {
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.2s;
+}
+
+.tocItem button:hover {
+  background: #f5f5f5;
+}
+
+.tocItem button:disabled {
+  cursor: default;
+  color: #999;
+}
+
+.hasChildrenBtn {
+  padding-left: 8px;
+}
+
+.expandIcon {
+  font-size: 10px;
+  color: #999;
+  width: 16px;
+  text-align: center;
+}
+
+.tocTitle {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tocChildren {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: none;
+}
+
+.tocChildren.expanded {
+  display: block;
+}
+
+.tocChildren .tocItem button {
+  padding-left: 32px;
+  font-size: 13px;
+}
+
+.tocChildren .tocChildren .tocItem button {
+  padding-left: 48px;
+}

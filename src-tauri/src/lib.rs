@@ -85,6 +85,23 @@ async fn init_db(
     .execute(&pool)
     .await?;
 
+    // Create bookmarks table
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            book_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            position TEXT NOT NULL,
+            cfi TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await?;
+
     Ok(pool)
 }
 
@@ -167,6 +184,11 @@ pub fn run() {
             commands::read_file_bytes,
             commands::get_app_data_dir,
             commands::ensure_dir,
+            commands::get_annotations,
+            commands::create_annotation,
+            commands::delete_annotation,
+            commands::get_annotations_by_cfi,
+            commands::update_annotation,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

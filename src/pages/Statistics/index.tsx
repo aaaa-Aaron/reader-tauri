@@ -56,7 +56,7 @@ const Statistics: React.FC = () => {
               <span className={styles.label}>Most Looked Up</span>
             </div>
             <div className={styles.card}>
-              <span className={styles.value}>{summary.averageLookupsPerWord.toFixed(1)}</span>
+              <span className={styles.value}>{(summary.averageLookupsPerWord ?? 0).toFixed(1)}</span>
               <span className={styles.label}>Avg Lookups</span>
             </div>
           </section>

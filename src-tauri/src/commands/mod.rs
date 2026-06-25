@@ -2,6 +2,7 @@ use mdict_rs::MdxFile;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 
+pub mod annotation_commands;
 pub mod book_commands;
 pub mod file_commands;
 pub mod translate_commands;
@@ -12,6 +13,7 @@ pub struct AppState {
     pub mdx_dict: Arc<MdxFile>,
 }
 
+pub use annotation_commands::*;
 pub use book_commands::*;
 pub use file_commands::*;
 pub use translate_commands::*;
